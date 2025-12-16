@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.DashboardController">
+
+    <top>
+        <HBox style="-fx-background-color: #1976D2; -fx-padding: 15;"
+              spacing="20" alignment="CENTER_LEFT">
+
+            <Label text="EDUVERSE" style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <HBox spacing="10" alignment="CENTER">
+                <Label fx:id="userNameLabel" style="-fx-text-fill: white; -fx-font-size: 14;"/>
+                <Label fx:id="userRoleLabel" style="-fx-text-fill: #BBDEFB; -fx-font-size: 12;"/>
+            </HBox>
+
+            <Button text="Đăng xuất" onAction="#handleLogout"
+                    style="-fx-background-color: #D32F2F; -fx-text-fill: white;"/>
+        </HBox>
+    </top>
+
+    <left>
+        <VBox style="-fx-background-color: #FAFAFA; -fx-pref-width: 200; -fx-padding: 10;"
+              spacing="5">
+
+            <Label text="MENU" style="-fx-font-weight: bold; -fx-padding: 10;"/>
+
+            <Button text="📚 Khóa học" onAction="#showCourses"
+                    style="-fx-pref-width: 180; -fx-alignment: CENTER_LEFT;"/>
+
+            <Button text="📹 Meeting" onAction="#showMeetings"
+                    style="-fx-pref-width: 180; -fx-alignment: CENTER_LEFT;"/>
+
+            <Button text="💬 Chat" onAction="#showChat"
+                    style="-fx-pref-width: 180; -fx-alignment: CENTER_LEFT;"/>
+
+            <Button text="📝 Bài thi" onAction="#showExams"
+                    style="-fx-pref-width: 180; -fx-alignment: CENTER_LEFT;"/>
+
+            <Separator/>
+
+            <Label text="THÔNG TIN" style="-fx-font-weight: bold; -fx-padding: 10;"/>
+
+            <VBox fx:id="peerInfoBox" spacing="5"
+                  style="-fx-background-color: white; -fx-background-radius: 5; -fx-padding: 10;">
+                <Label text="📡 Peer Info" style="-fx-font-weight: bold;"/>
+                <Label fx:id="ipLabel" style="-fx-font-size: 11;"/>
+                <Label fx:id="videoPortLabel" style="-fx-font-size: 11;"/>
+                <Label fx:id="audioPortLabel" style="-fx-font-size: 11;"/>
+                <Label fx:id="chatPortLabel" style="-fx-font-size: 11;"/>
+            </VBox>
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="contentPane" style="-fx-background-color: white;">
+            <VBox alignment="CENTER" spacing="20">
+                <Label text="Chào mừng đến với Eduverse!" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+                <Label text="Chọn chức năng từ menu bên trái" style="-fx-font-size: 14; -fx-text-fill: #666;"/>
+            </VBox>
+        </StackPane>
+    </center>
+
+</BorderPane>

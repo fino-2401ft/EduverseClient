@@ -5,7 +5,6 @@ import common.model.Peer;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.List;
 
 public interface IPeerService extends Remote {
     boolean registerGlobalPeer(String userId, String ipAddress, int videoPort, 

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.LoginController"
+      alignment="CENTER"
+      spacing="20"
+      style="-fx-background-color: #f5f5f5;">
+
+    <padding>
+        <Insets top="50" right="50" bottom="50" left="50"/>
+    </padding>
+
+    <!-- Logo và Title -->
+    <VBox alignment="CENTER" spacing="10">
+        <Label text="EDUVERSE" style="-fx-text-fill: #1976D2; -fx-font-weight: bold;">
+            <font>
+                <Font size="36"/>
+            </font>
+        </Label>
+        <Label text="Hệ thống học tập và thi trực tuyến" style="-fx-text-fill: #666;">
+            <font>
+                <Font size="14"/>
+            </font>
+        </Label>
+    </VBox>
+
+    <!-- Login Form -->
+    <VBox spacing="15" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;">
+        <effect>
+            <javafx.scene.effect.DropShadow color="#00000033" radius="10"/>
+
+
+        </effect>
+
+        <Label text="Đăng nhập" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+
+        <!-- Email -->
+        <VBox spacing="5">
+            <Label text="Email:"/>
+            <TextField fx:id="emailField" promptText="example@email.com"
+                       style="-fx-pref-width: 350; -fx-pref-height: 40;"/>
+        </VBox>
+
+        <!-- Password -->
+        <VBox spacing="5">
+            <Label text="Mật khẩu:"/>
+            <PasswordField fx:id="passwordField" promptText="••••••••"
+                           style="-fx-pref-width: 350; -fx-pref-height: 40;"/>
+        </VBox>
+
+        <!-- Buttons -->
+        <HBox spacing="10" alignment="CENTER">
+            <Button fx:id="loginButton" text="Đăng nhập"
+                    onAction="#handleLogin"
+                    style="-fx-background-color: #1976D2; -fx-text-fill: white;
+                           -fx-font-size: 14; -fx-pref-width: 150; -fx-pref-height: 40;
+                           -fx-background-radius: 5;"/>
+
+            <Button text="Đăng ký"
+                    onAction="#handleRegister"
+                    style="-fx-background-color: #43A047; -fx-text-fill: white;
+                           -fx-font-size: 14; -fx-pref-width: 150; -fx-pref-height: 40;
+                           -fx-background-radius: 5;"/>
+        </HBox>
+
+        <!-- Status Label -->
+        <Label fx:id="statusLabel" style="-fx-text-fill: red; -fx-font-size: 12;"
+               wrapText="true" alignment="CENTER"/>
+    </VBox>
+
+</VBox>

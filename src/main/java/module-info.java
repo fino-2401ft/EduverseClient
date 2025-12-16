@@ -15,4 +15,10 @@ module org.example.eduverseclient {
  //exports là để chỉ định các gói (packages) mà module này muốn chia sẻ với các module khác.
     exports common.rmi;
     exports common.model;
+
+
+    // Mở quyền cho javafx.fxml truy cập vào package chứa Controller
+    // để nó có thể khởi tạo LoginController và gán các biến @FXML
+    opens org.example.eduverseclient.controller to javafx.fxml;
+
 }

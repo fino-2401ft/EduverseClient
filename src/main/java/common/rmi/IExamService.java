@@ -1,4 +1,4 @@
-//package common.rmi;
+package common.rmi;//package common.rmi;
 //
 //import common.model.exam.Exam;
 //
