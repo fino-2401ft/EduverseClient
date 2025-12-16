@@ -6,6 +6,7 @@ import common.model.User;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
@@ -55,15 +56,35 @@ public class DashboardController {
     private void showCourses() {
         showInfo("Chức năng Khóa học đang được phát triển");
     }
-    
+
     @FXML
     private void showMeetings() {
-        showInfo("Chức năng Meeting đang được phát triển");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/meeting-list.fxml")
+            );
+
+            Node meetingView = loader.load();
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(meetingView);
+
+        } catch (Exception e) {
+            log.error("Failed to load meeting view", e);
+            showInfo("Không thể tải danh sách meeting!");
+        }
     }
     
     @FXML
     private void showChat() {
-        showInfo("Chức năng Chat đang được phát triển");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/chat-view.fxml")
+            );    Node chatView = loader.load();
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(chatView);} catch (Exception e) {
+            log.error("Failed to load chat view", e);
+            showInfo("Không thể tải chat!");
+        }
     }
     
     @FXML
@@ -83,12 +104,13 @@ public class DashboardController {
                 // Logout
                 new Thread(() -> {
                     rmiClient.logout();
-                    
                     Platform.runLater(this::backToLogin);
                 }).start();
             }
         });
     }
+
+
     
     private void backToLogin() {
         try {

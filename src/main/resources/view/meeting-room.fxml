@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.MeetingRoomController"
+            style="-fx-background-color: #1E1E1E;">
+
+    <!-- Top Bar -->
+    <top>
+        <HBox style="-fx-background-color: #2C2C2C; -fx-padding: 10;"
+              spacing="15" alignment="CENTER_LEFT">
+
+            <Label fx:id="meetingTitleLabel" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+
+            <Label fx:id="participantCountLabel" style="-fx-text-fill: #BBDEFB; -fx-font-size: 13;"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Label fx:id="durationLabel" style="-fx-text-fill: #4CAF50; -fx-font-size: 14; -fx-font-weight: bold;"/>
+        </HBox>
+    </top>
+
+    <!-- Center: Video Grid -->
+    <center>
+        <ScrollPane fitToWidth="true" fitToHeight="true"
+                    style="-fx-background-color: #1E1E1E;">
+            <GridPane fx:id="videoGrid" hgap="10" vgap="10" alignment="CENTER">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20"/>
+                </padding>
+            </GridPane>
+        </ScrollPane>
+    </center>
+
+    <!-- Right Sidebar: Participants List -->
+    <right>
+        <VBox style="-fx-background-color: #2C2C2C; -fx-pref-width: 300;"
+              spacing="10">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+
+            <Label text="👥 Danh sách thành viên" style="-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
+
+            <Separator style="-fx-background-color: #444;"/>
+
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background-color: transparent;">
+                <VBox fx:id="participantListBox" spacing="8"/>
+            </ScrollPane>
+        </VBox>
+    </right>
+
+    <!-- Bottom: Controls -->
+    <bottom>
+        <HBox style="-fx-background-color: #2C2C2C; -fx-padding: 15;"
+              spacing="15" alignment="CENTER">
+
+            <Button fx:id="muteButton" text="🎤 Mic" onAction="#handleToggleMute"
+                    style="-fx-background-color: #424242; -fx-text-fill: white;
+                           -fx-pref-width: 80; -fx-pref-height: 40; -fx-background-radius: 20;"/>
+
+            <Button fx:id="cameraButton" text="📹 Camera" onAction="#handleToggleCamera"
+                    style="-fx-background-color: #424242; -fx-text-fill: white;
+                           -fx-pref-width: 100; -fx-pref-height: 40; -fx-background-radius: 20;"/>
+
+            <Button fx:id="handButton" text="✋ Giơ tay" onAction="#handleRaiseHand"
+                    style="-fx-background-color: #424242; -fx-text-fill: white;
+                           -fx-pref-width: 100; -fx-pref-height: 40; -fx-background-radius: 20;"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="endButton" text="📞 Rời phòng" onAction="#handleLeave"
+                    style="-fx-background-color: #E53935; -fx-text-fill: white;
+-fx-pref-width: 120; -fx-pref-height: 40; -fx-background-radius: 20;"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

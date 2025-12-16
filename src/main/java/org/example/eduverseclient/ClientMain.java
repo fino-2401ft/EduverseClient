@@ -18,7 +18,7 @@ public class ClientMain extends Application {
             
             // Load Login UI
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/example/eduverseclient/login.fxml")
+                getClass().getResource("/view/login.fxml")
             );
             Scene scene = new Scene(loader.load(), 500, 600);
             

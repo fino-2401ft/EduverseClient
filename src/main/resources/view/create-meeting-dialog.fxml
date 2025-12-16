@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.CreateMeetingDialogController"
+      spacing="15"
+      style="-fx-background-color: white;">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Tạo Meeting Mới" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+
+    <Separator/>
+
+    <!-- Title -->
+    <VBox spacing="5">
+        <Label text="Tiêu đề Meeting:"/>
+        <TextField fx:id="titleField" promptText="Nhập tiêu đề..." style="-fx-pref-height: 35;"/>
+    </VBox>
+
+    <!-- Course (tạm thời ẩn, dùng default) -->
+    <VBox spacing="5" managed="false" visible="false">
+        <Label text="Khóa học:"/>
+        <ComboBox fx:id="courseComboBox" style="-fx-pref-width: 460;"/>
+    </VBox>
+
+    <!-- Scheduled Time -->
+    <VBox spacing="5">
+        <Label text="Thời gian dự kiến:"/>
+        <HBox spacing="10">
+            <DatePicker fx:id="datePicker" style="-fx-pref-width: 200;"/>
+            <TextField fx:id="timeField" promptText="HH:mm" style="-fx-pref-width: 100;"/>
+        </HBox>
+        <Label text="Ví dụ: 14:30" style="-fx-font-size: 11; -fx-text-fill: #999;"/>
+    </VBox>
+
+    <!-- Description -->
+    <VBox spacing="5">
+        <Label text="Mô tả (tùy chọn):"/>
+        <TextArea fx:id="descriptionArea" promptText="Nhập mô tả..."
+                  prefRowCount="3" wrapText="true"/>
+    </VBox>
+
+    <Region VBox.vgrow="ALWAYS"/>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Hủy" onAction="#handleCancel"
+                style="-fx-pref-width: 100; -fx-pref-height: 35;"/>
+
+        <Button text="Tạo Meeting" onAction="#handleCreate"
+                style="-fx-background-color: #1976D2; -fx-text-fill: white;
+                       -fx-pref-width: 120; -fx-pref-height: 35;"/>
+    </HBox>
+
+</VBox>

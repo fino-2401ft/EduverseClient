@@ -39,4 +39,8 @@ public class MeetingEnrollment implements Serializable {
     
     @Builder.Default
     private boolean isHandRaised = false;
+
+    public boolean isHost() {
+        return this.role == MeetingRole.HOST;
+    }
 }

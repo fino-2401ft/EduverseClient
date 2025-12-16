@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.ChatViewController"
+            style="-fx-background-color: white;">
+
+    <!-- Left: Conversation List -->
+    <left>
+        <VBox style="-fx-background-color: #F5F5F5; -fx-pref-width: 300;"
+              spacing="10">
+            <padding>
+                <Insets top="15" right="10" bottom="15" left="10"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="💬 Tin nhắn" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button text="➕" onAction="#handleNewChat"
+                        style="-fx-background-color: #1976D2; -fx-text-fill: white;
+                               -fx-font-size: 16; -fx-pref-width: 35; -fx-pref-height: 35;
+                               -fx-background-radius: 20;"/>
+            </HBox>
+
+            <Separator/>
+
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background-color: transparent;">
+                <VBox fx:id="conversationListBox" spacing="5"/>
+            </ScrollPane>
+        </VBox>
+    </left>
+
+    <!-- Center: Chat Window -->
+    <center>
+        <VBox fx:id="chatWindow" visible="false">
+
+            <!-- Chat Header -->
+            <HBox style="-fx-background-color: #1976D2; -fx-padding: 15;"
+                  alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="chatTitleLabel" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Label fx:id="onlineStatusLabel" style="-fx-text-fill: #BBDEFB; -fx-font-size: 12;"/>
+            </HBox>
+
+            <!-- Messages Area -->
+            <ScrollPane fx:id="messagesScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background-color: #FAFAFA;">
+                <VBox fx:id="messagesBox" spacing="10" style="-fx-padding: 15;"/>
+            </ScrollPane>
+
+            <!-- Input Area -->
+            <HBox style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #E0E0E0; -fx-border-width: 1 0 0 0;"
+                  spacing="10" alignment="CENTER">
+
+                <Button text="📎" onAction="#handleAttachment"
+                        style="-fx-background-color: transparent; -fx-font-size: 18;"/>
+
+                <TextField fx:id="messageField" promptText="Nhập tin nhắn..."
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-pref-height: 40; -fx-background-radius: 20;"/>
+
+                <Button text="📤" onAction="#handleSend"
+                        style="-fx-background-color: #1976D2; -fx-text-fill: white;
+                               -fx-font-size: 18; -fx-pref-width: 50; -fx-pref-height: 40;
+                               -fx-background-radius: 20;"/>
+            </HBox>
+        </VBox>
+
+        <!-- Empty State -->
+        <VBox fx:id="emptyState" alignment="CENTER" spacing="20" visible="true">
+            <Label text="💬" style="-fx-font-size: 72;"/>
+            <Label text="Chọn một cuộc trò chuyện để bắt đầu"
+                   style="-fx-font-size: 16; -fx-text-fill: #999;"/>
+        </VBox>
+    </center>
+
+</BorderPane>

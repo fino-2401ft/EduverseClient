@@ -59,7 +59,7 @@ public class LoginController {
                 loginButton.setDisable(false);
                 
                 if (user != null) {
-                    log.info("✅ Login success: {}", user.getFullName());
+                    log.info("Login success: {}", user.getFullName());
                     openDashboard();
                 } else {
                     showError("Email hoặc mật khẩu không đúng!");
@@ -77,7 +77,7 @@ public class LoginController {
     private void openDashboard() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/example/eduverseclient/dashboard.fxml")
+                getClass().getResource("/view/dashboard.fxml")
             );
             Scene scene = new Scene(loader.load(), 1200, 700);
             

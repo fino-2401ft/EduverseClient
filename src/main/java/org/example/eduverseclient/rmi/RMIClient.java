@@ -57,7 +57,7 @@ public class RMIClient {
      */
     public boolean connect() {
         try {
-            log.info("🔌 Connecting to RMI Server...");
+            log.info(" Connecting to RMI Server...");
             
             Registry registry = LocateRegistry.getRegistry(
                 RMIConfig.RMI_HOST,
@@ -90,8 +90,8 @@ public class RMIClient {
                 // Lấy peer info
                 myPeer = peerService.getGlobalPeer(currentUser.getUserId());
                 
-                log.info("✅ Login success: {}", currentUser.getFullName());
-                log.info("📡 My Peer: {}:{}", myPeer.getIpAddress(), myPeer.getVideoPort());
+                log.info(" Login success: {}", currentUser.getFullName());
+                log.info(" My Peer: {}:{}", myPeer.getIpAddress(), myPeer.getVideoPort());
                 
                 // Bắt đầu heartbeat
                 startHeartbeat();
@@ -100,7 +100,7 @@ public class RMIClient {
             return currentUser;
             
         } catch (Exception e) {
-            log.error("❌ Login failed", e);
+            log.error(" Login failed", e);
             return null;
         }
     }
