@@ -11,17 +11,13 @@ import java.nio.ByteBuffer;
 
 @Slf4j
 public class UDPVideoSender {
-    private DatagramSocket socket;
+    private DatagramSocket socket; // Không tạo mới, chỉ tham chiếu
     private String userId;
-    
-    public UDPVideoSender(String userId, int localPort) {
+
+    // SỬA CONSTRUCTOR NÀY
+    public UDPVideoSender(DatagramSocket socket, String userId) {
+        this.socket = socket;
         this.userId = userId;
-        try {
-            socket = new DatagramSocket(localPort);
-            log.info("✅ UDPVideoSender started on port {}", localPort);
-        } catch (Exception e) {
-            log.error("❌ Failed to create UDP socket", e);
-        }
     }
     
     public void sendFrame(byte[] frameData, String hostIP, int hostPort) {

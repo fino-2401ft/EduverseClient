@@ -17,16 +17,13 @@ public class UDPAudioReceiver {
     private BiConsumer<String, byte[]> audioCallback;
     
     private static final int MAX_PACKET_SIZE = 8192;
-    
-    public UDPAudioReceiver(int port) {
-        try {
-            socket = new DatagramSocket(port);
-            log.info("✅ UDPAudioReceiver listening on port {}", port);
-        } catch (Exception e) {
-            log.error("❌ Failed to create UDP socket", e);
-        }
+
+    // SỬA CONSTRUCTOR NÀY
+    public UDPAudioReceiver(DatagramSocket socket) {
+        this.socket = socket;
     }
-    
+
+
     /**
      * Start receiving
      */
@@ -93,8 +90,23 @@ public class UDPAudioReceiver {
     public void stop() {
         isRunning = false;
         
+        // Đợi thread kết thúc
+        if (receiveThread != null && receiveThread.isAlive()) {
+            try {
+                receiveThread.join(1000); // Đợi tối đa 1 giây
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted while waiting for receive thread");
+            }
+        }
+        
+        // Đóng socket sau khi thread đã dừng
         if (socket != null && !socket.isClosed()) {
-            socket.close();
+            try {
+                socket.close();
+            } catch (Exception e) {
+                log.warn("Error closing socket", e);
+            }
         }
         
         log.info("🛑 UDPAudioReceiver stopped");

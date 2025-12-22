@@ -1,7 +1,5 @@
 package org.example.eduverseclient.rmi;
 
-
-import common.constant.RMIConfig;
 import common.model.Peer;
 import common.model.User;
 import common.rmi.IAuthService;
@@ -10,6 +8,8 @@ import common.rmi.IMeetingService;
 import common.rmi.IPeerService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.example.eduverseclient.utils.NetworkUtil;
+
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -20,160 +20,242 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RMIClient {
     private static RMIClient instance;
-    
+
     @Getter
     private IAuthService authService;
-    
+
     @Getter
     private IMeetingService meetingService;
-    
+
     @Getter
     private IChatService chatService;
-    
+
     @Getter
     private IPeerService peerService;
-    
+
     @Getter
     private User currentUser;
-    
+
     @Getter
     private Peer myPeer;
-    
+
+    @Getter
+    private String myIPAddress; // Client's detected IP
+
     private ScheduledExecutorService heartbeatExecutor;
-    
+
+    // RMI Server config
+    private static final String RMI_HOST = "localhost"; // TODO: Load from config
+    private static final int RMI_PORT = 1099;
+
     private RMIClient() {
-        // Constructor private để Singleton
+        // Private constructor for Singleton
     }
-    
+
     public static synchronized RMIClient getInstance() {
         if (instance == null) {
             instance = new RMIClient();
         }
         return instance;
     }
-    
+
     /**
      * Kết nối đến RMI Server
      */
     public boolean connect() {
         try {
-            log.info(" Connecting to RMI Server...");
-            
-            Registry registry = LocateRegistry.getRegistry(
-                RMIConfig.RMI_HOST,
-                RMIConfig.RMI_PORT
-            );
-            
-            // Lookup các services
-            authService = (IAuthService) registry.lookup(RMIConfig.AUTH_SERVICE);
-            meetingService = (IMeetingService) registry.lookup(RMIConfig.MEETING_SERVICE);
-            chatService = (IChatService) registry.lookup(RMIConfig.CHAT_SERVICE);
-            peerService = (IPeerService) registry.lookup(RMIConfig.PEER_SERVICE);
-            
-            log.info(" Connected to RMI Server");
+            log.info("🔌 Connecting to RMI Server at {}:{}...", RMI_HOST, RMI_PORT);
+
+            Registry registry = LocateRegistry.getRegistry(RMI_HOST, RMI_PORT);
+
+            // Lookup services
+            authService = (IAuthService) registry.lookup("AuthService");
+            meetingService = (IMeetingService) registry.lookup("MeetingService");
+            chatService = (IChatService) registry.lookup("ChatService");
+            peerService = (IPeerService) registry.lookup("PeerService");
+
+            log.info("✅ Connected to RMI Server");
             return true;
-            
+
         } catch (Exception e) {
-            log.error(" Failed to connect RMI Server", e);
+            log.error("❌ Failed to connect to RMI Server", e);
             return false;
         }
     }
-    
+
     /**
-     * Login
+     * 🔥 AUTO-DETECT IP ADDRESS
+     */
+    private void detectMyIPAddress() {
+        // Try to detect IP (prefer LAN IP)
+        myIPAddress = NetworkUtil.getLocalIPAddress();
+
+        log.info("📍 Detected my IP address: {}", myIPAddress);
+
+        // If localhost, try public IP (for WAN)
+        if (myIPAddress.equals("127.0.0.1") || myIPAddress.equals("localhost")) {
+            log.warn("⚠️ Detected localhost, trying public IP...");
+
+            String publicIP = NetworkUtil.getPublicIPAddress();
+            if (publicIP != null && !publicIP.isEmpty()) {
+                myIPAddress = publicIP;
+                log.info("📍 Using public IP: {}", myIPAddress);
+            } else {
+                log.warn("⚠️ Failed to get public IP, using localhost");
+            }
+        }
+    }
+
+    /**
+     * Login with auto IP detection
      */
     public User login(String email, String password) {
         try {
-            currentUser = authService.login(email, password);
-            
+            // 1. Detect my IP address
+            detectMyIPAddress();
+
+            log.info("🔐 Logging in as {} from IP: {}", email, myIPAddress);
+
+            // 2. Call login with detected IP
+            currentUser = authService.login(email, password, myIPAddress);
+
             if (currentUser != null) {
-                // Lấy peer info
+                log.info("✅ Login success: {}", currentUser.getFullName());
+
+                // 3. Get my peer info from server
                 myPeer = peerService.getGlobalPeer(currentUser.getUserId());
-                
-                log.info(" Login success: {}", currentUser.getFullName());
-                log.info(" My Peer: {}:{}", myPeer.getIpAddress(), myPeer.getVideoPort());
-                
-                // Bắt đầu heartbeat
-                startHeartbeat();
+
+                if (myPeer != null) {
+                    log.info("📡 My Peer Info:");
+                    log.info("   - IP: {}", myPeer.getIpAddress());
+                    log.info("   - Video Port: {}", myPeer.getVideoPort());
+                    log.info("   - Audio Port: {}", myPeer.getAudioPort());
+                    log.info("   - Chat Port: {}", myPeer.getChatPort());
+
+                    // 4. Start heartbeat
+                    startHeartbeat();
+                } else {
+                    log.error("❌ Failed to get peer info");
+                }
             }
-            
+
             return currentUser;
-            
+
         } catch (Exception e) {
-            log.error(" Login failed", e);
+            log.error("❌ Login failed: {}", e.getMessage());
             return null;
         }
     }
-    
+
     /**
      * Logout
      */
     public boolean logout() {
         try {
-            if (currentUser != null) {
-                authService.logout(currentUser.getUserId());
-                
-                // Dừng heartbeat
-                stopHeartbeat();
-                
+            if (currentUser == null) {
+                log.warn("⚠️ No user logged in");
+                return false;
+            }
+
+            log.info("👋 Logging out: {}", currentUser.getUserId());
+
+            // Stop heartbeat
+            stopHeartbeat();
+
+            // Call server logout
+            boolean success = authService.logout(currentUser.getUserId());
+
+            if (success) {
                 currentUser = null;
                 myPeer = null;
-                
                 log.info("✅ Logout success");
-                return true;
             }
-            return false;
-            
+
+            return success;
+
         } catch (Exception e) {
             log.error("❌ Logout failed", e);
             return false;
         }
     }
-    
+
     /**
-     * Kiểm tra đã login chưa
-     */
-    public boolean isLoggedIn() {
-        return currentUser != null;
-    }
-    
-    /**
-     * Bắt đầu heartbeat (10s một lần)
+     * Start heartbeat (gửi tín hiệu sống mỗi 10 giây)
      */
     private void startHeartbeat() {
-        heartbeatExecutor = Executors.newScheduledThreadPool(1);
-        
+        if (heartbeatExecutor != null && !heartbeatExecutor.isShutdown()) {
+            log.warn("⚠️ Heartbeat already running");
+            return;
+        }
+
+        heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
+
         heartbeatExecutor.scheduleAtFixedRate(() -> {
             try {
                 if (currentUser != null) {
-                    peerService.heartbeat(currentUser.getUserId());
-                    log.debug("💓 Heartbeat sent");
+                    boolean alive = peerService.heartbeat(currentUser.getUserId());
+
+                    if (!alive) {
+                        log.warn("⚠️ Heartbeat failed - may be disconnected");
+                    } else {
+                        log.debug("💓 Heartbeat sent");
+                    }
                 }
             } catch (Exception e) {
-                log.error("❌ Heartbeat failed", e);
+                log.error("❌ Heartbeat error", e);
             }
-        }, 10, 10, TimeUnit.SECONDS);
-        
-        log.info("💓 Heartbeat started");
+        }, 5, 10, TimeUnit.SECONDS); // Initial delay 5s, interval 10s
+
+        log.info("💓 Heartbeat started (interval: 10s)");
     }
-    
+
     /**
-     * Dừng heartbeat
+     * Stop heartbeat
      */
     private void stopHeartbeat() {
         if (heartbeatExecutor != null && !heartbeatExecutor.isShutdown()) {
             heartbeatExecutor.shutdown();
-            log.info("💓 Heartbeat stopped");
+            try {
+                if (!heartbeatExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    heartbeatExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                heartbeatExecutor.shutdownNow();
+            }
+            log.info("💔 Heartbeat stopped");
         }
     }
-    
+
     /**
-     * Shutdown client
+     * Check if connected
      */
-    public void shutdown() {
-        stopHeartbeat();
-        if (currentUser != null) {
-            logout();
+    public boolean isConnected() {
+        return authService != null && meetingService != null;
+    }
+
+    /**
+     * Check if logged in
+     */
+    public boolean isLoggedIn() {
+        return currentUser != null && myPeer != null;
+    }
+
+    /**
+     * Get connection status info
+     */
+    public String getConnectionInfo() {
+        if (!isConnected()) {
+            return "❌ Not connected to server";
         }
+
+        if (!isLoggedIn()) {
+            return "⚠️ Connected but not logged in";
+        }
+
+        return String.format("✅ Connected as %s (%s) - IP: %s",
+                currentUser.getFullName(),
+                currentUser.getRole(),
+                myPeer.getIpAddress()
+        );
     }
 }

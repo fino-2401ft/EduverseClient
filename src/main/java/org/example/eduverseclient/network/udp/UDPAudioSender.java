@@ -12,16 +12,12 @@ public class UDPAudioSender {
     private DatagramSocket socket;
     private String userId;
     
-    public UDPAudioSender(String userId, int localPort) {
+
+
+    public UDPAudioSender(DatagramSocket socket, String userId) {
+        this.socket = socket;
         this.userId = userId;
-        try {
-            socket = new DatagramSocket(localPort);
-            log.info("✅ UDPAudioSender started on port {}", localPort);
-        } catch (Exception e) {
-            log.error("❌ Failed to create UDP socket", e);
-        }
     }
-    
     /**
      * Gửi audio packet đến HOST
      */
