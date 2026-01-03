@@ -169,12 +169,22 @@ public class MeetingService {
     /**
      * Lấy danh sách participants
      */
+
     public List<MeetingEnrollment> getParticipants(String meetingId) {
         try {
             return rmiClient.getMeetingService().getParticipants(meetingId);
         } catch (Exception e) {
+            // ✨ SỬA: Đừng in lỗi đỏ lòm và đừng return list rỗng nữa.
+
+            // Kiểm tra nếu là lỗi mất kết nối
+            if (e instanceof java.rmi.ConnectException || e.getCause() instanceof java.net.ConnectException) {
+                // Ném lỗi ra ngoài để Controller bắt được
+                throw new RuntimeException("Server connection lost");
+            }
+
+            // Nếu là lỗi khác thì log như thường
             log.error("❌ Get participants failed", e);
-            return new ArrayList<>();
+            throw new RuntimeException(e);
         }
     }
     

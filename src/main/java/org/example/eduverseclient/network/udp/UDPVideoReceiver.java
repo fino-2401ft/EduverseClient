@@ -27,14 +27,12 @@ public class UDPVideoReceiver {
     
     private final Map<String, Map<Integer, byte[]>> frameBuffers = new ConcurrentHashMap<>();
     private final Map<String, FrameMetadata> frameMetadata = new ConcurrentHashMap<>();
-    
-    public UDPVideoReceiver(int port) {
-        try {
-            socket = new DatagramSocket(port);
-            log.info("✅ UDPVideoReceiver listening on port {}", port);
-        } catch (Exception e) {
-            log.error("❌ Failed to create UDP socket", e);
-        }
+
+    private volatile boolean running = true;
+
+    // SỬA CONSTRUCTOR NÀY
+    public UDPVideoReceiver(DatagramSocket socket) {
+        this.socket = socket;
     }
     
     public void start(BiConsumer<String, Image> frameCallback) {
@@ -138,10 +136,20 @@ public class UDPVideoReceiver {
     
     public void stop() {
         isRunning = false;
+        running = false;
         
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
+        // Wait for receive thread to finish (with timeout)
+        if (receiveThread != null && receiveThread.isAlive()) {
+            try {
+                receiveThread.join(500); // Wait up to 500ms
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted while waiting for receive thread to stop");
+            }
         }
+        
+        // Don't close socket here - MediaStreamManager will handle it
+        // Closing socket here can cause issues if MediaStreamManager still needs it
         
         log.info("🛑 UDPVideoReceiver stopped");
     }
