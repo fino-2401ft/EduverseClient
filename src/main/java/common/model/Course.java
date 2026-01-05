@@ -34,7 +34,7 @@ public class Course implements Serializable {
     private long updatedAt = System.currentTimeMillis();
 
     @Builder.Default
-    private boolean isActive = true;
+    private boolean active = true;
 
     // Helper methods
     public void addStudent(String studentId) {

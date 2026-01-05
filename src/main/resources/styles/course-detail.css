@@ -1,0 +1,138 @@
+.root-scroll {
+    -fx-background-color: #F5F7FA;
+    -fx-fit-to-width: true;
+}
+
+.main-container {
+    -fx-background-color: #F5F7FA;
+}
+
+.content-area {
+    -fx-background-color: transparent;
+}
+
+/* Typography */
+.course-title-large {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2D3748;
+}
+
+.course-description {
+    -fx-font-size: 14px;
+    -fx-text-fill: #4A5568;
+    -fx-line-spacing: 4px;
+}
+
+.teacher-name {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2B6CB0;
+}
+
+.meta-label {
+    -fx-text-fill: #718096;
+    -fx-font-size: 13px;
+}
+
+.section-header {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2D3748;
+    -fx-padding: 0 0 10 0;
+}
+
+/* Sidebar Styling - Fix Glitch here */
+.sidebar-area {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, -5, 0);
+}
+
+.course-thumbnail {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
+    -fx-arc-width: 10;
+    -fx-arc-height: 10;
+}
+
+.action-card {
+    -fx-background-color: #fff;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.price-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2D3748;
+}
+
+.status-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #718096;
+}
+
+.features-card {
+    -fx-padding: 20;
+    -fx-background-color: #F7FAFC;
+    -fx-background-radius: 8;
+}
+
+.card-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 0 0 5 0;
+}
+
+/* Button Styles */
+.btn-primary-large {
+    -fx-background-color: #3182CE;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-padding: 12 24;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.btn-primary-large:hover {
+    -fx-background-color: #2B6CB0;
+}
+
+.btn-secondary-small {
+    -fx-background-color: transparent;
+    -fx-text-fill: #3182CE;
+    -fx-border-color: #3182CE;
+    -fx-border-radius: 4;
+    -fx-cursor: hand;
+}
+
+.btn-secondary-small:hover {
+    -fx-background-color: #EBF8FF;
+}
+
+/* Tab Pane Styling */
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+.tab-pane .tab {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 10 20;
+}
+
+.tab-pane .tab:selected {
+    -fx-border-color: transparent transparent #3182CE transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.tab-pane .tab-label {
+    -fx-text-fill: #718096;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #3182CE;
+}

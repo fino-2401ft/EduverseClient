@@ -10,6 +10,8 @@ public class FirebaseConfig {
     public static final String CONVERSATIONS_PATH = "conversations";
     public static final String MESSAGES_PATH = "messages";
     public static final String FILES_PATH = "files";
+    public static final String COURSE_ENROLLMENTS_PATH = "courseEnrollments";
+    public static final String EXAM_RESULTS_PATH = "examResults";
     
     // Message Room Prefixes
     public static final String COURSE_CHAT_PREFIX = "course_";

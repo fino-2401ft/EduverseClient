@@ -4,6 +4,7 @@ import common.model.Peer;
 import common.model.User;
 import common.rmi.IAuthService;
 import common.rmi.IChatService;
+import common.rmi.ICourseService;
 import common.rmi.IMeetingService;
 import common.rmi.IPeerService;
 import lombok.Getter;
@@ -27,6 +28,9 @@ public class RMIClient {
     @Getter
     private IMeetingService meetingService;
 
+    @Getter
+    private ICourseService courseService;
+
 //    @Getter
 //    private IChatService chatService;
 
@@ -45,7 +49,7 @@ public class RMIClient {
     private ScheduledExecutorService heartbeatExecutor;
 
     // RMI Server config
-    private static final String RMI_HOST = "192.168.1.186"; // TODO: Load from config
+    private static final String RMI_HOST = "192.168.100.62"; // TODO: Load from config
     private static final int RMI_PORT = 1099;
 
     private RMIClient() {
@@ -71,6 +75,7 @@ public class RMIClient {
             // Lookup services
             authService = (IAuthService) registry.lookup("AuthService");
             meetingService = (IMeetingService) registry.lookup("MeetingService");
+            courseService = (ICourseService) registry.lookup("CourseService");
           //  chatService = (IChatService) registry.lookup("ChatService");
             peerService = (IPeerService) registry.lookup("PeerService");
 
@@ -229,7 +234,7 @@ public class RMIClient {
      * Check if connected
      */
     public boolean isConnected() {
-        return authService != null && meetingService != null;
+        return authService != null && meetingService != null && courseService != null;
     }
 
     /**
@@ -278,6 +283,7 @@ public class RMIClient {
 
             authService = null;
             meetingService = null;
+            courseService = null;
           //  chatService = null;
             peerService = null;
 

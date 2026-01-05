@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.image.ImageView?>
+<?import java.net.URL?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.CourseDetailController"
+            fitToWidth="true"
+            styleClass="detail-scroll-pane">
+
+    <BorderPane fx:id="mainContainer" styleClass="course-detail-container">
+
+        <!-- Left Content -->
+        <left>
+            <VBox spacing="20" styleClass="course-content-left">
+                <!-- Breadcrumb -->
+                <HBox fx:id="breadcrumbContainer" spacing="5" styleClass="breadcrumb">
+                    <!-- Breadcrumb will be added dynamically -->
+                </HBox>
+
+                <!-- Course Title -->
+                <Label fx:id="courseTitleLabel" styleClass="course-detail-title" wrapText="true"/>
+
+                <!-- Subtitle -->
+                <Label fx:id="courseSubtitleLabel" styleClass="course-subtitle" wrapText="true"/>
+
+                <!-- Rating and Stats -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label fx:id="ratingLabel" styleClass="rating-text"/>
+                    <Label fx:id="ratingCountLabel" styleClass="rating-count"/>
+                    <Label fx:id="studentCountLabel" styleClass="student-count"/>
+                </HBox>
+
+                <!-- Instructor -->
+                <HBox spacing="5" alignment="CENTER_LEFT">
+                    <Label text="Created by " styleClass="instructor-label"/>
+                    <Hyperlink fx:id="instructorLink" styleClass="instructor-link"/>
+                </HBox>
+
+                <!-- Metadata -->
+                <HBox spacing="10" styleClass="metadata">
+                    <Label fx:id="lastUpdatedLabel" styleClass="metadata-text"/>
+                    <Label fx:id="languageLabel" styleClass="metadata-text"/>
+                </HBox>
+
+                <!-- Course Content Section -->
+                <VBox spacing="15" styleClass="content-section">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Course content" styleClass="section-title-large"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Hyperlink fx:id="expandAllLink" text="Expand all sections"
+                                   styleClass="expand-link"
+                                   onAction="#handleExpandAll"/>
+                    </HBox>
+
+                    <Label fx:id="contentSummaryLabel" styleClass="content-summary"/>
+
+                    <!-- Lessons Container -->
+                    <VBox fx:id="lessonsContainer" spacing="0" styleClass="lessons-container">
+                        <!-- Lessons will be added dynamically -->
+                    </VBox>
+                </VBox>
+
+                <!-- What you'll learn Section -->
+                <VBox spacing="10" styleClass="content-section">
+                    <Label text="What you'll learn" styleClass="section-title-large"/>
+                    <VBox fx:id="learningObjectivesContainer" spacing="8">
+                        <!-- Learning objectives will be added dynamically -->
+                    </VBox>
+                </VBox>
+
+                <!-- Requirements Section -->
+                <VBox spacing="10" styleClass="content-section">
+                    <Label text="Requirements" styleClass="section-title-large"/>
+                    <VBox fx:id="requirementsContainer" spacing="5">
+                        <!-- Requirements will be added dynamically -->
+                    </VBox>
+                </VBox>
+
+                <!-- Course Includes Section -->
+                <VBox spacing="10" styleClass="content-section">
+                    <Label text="This course includes:" styleClass="section-title-large"/>
+                    <VBox fx:id="courseIncludesContainer" spacing="8">
+                        <!-- Course includes will be added dynamically -->
+                    </VBox>
+                </VBox>
+            </VBox>
+        </left>
+
+        <!-- Right Sidebar -->
+        <right>
+            <VBox spacing="15" styleClass="course-sidebar">
+                <!-- Video Preview -->
+                <ImageView fx:id="thumbnailImageView"
+                           preserveRatio="true"
+                           styleClass="course-thumbnail-preview"/>
+
+                <!-- Price Section -->
+                <VBox spacing="10" styleClass="price-section">
+                    <Label fx:id="priceLabel" text="FREE" styleClass="course-price"/>
+
+                    <!-- Enroll Button -->
+                    <Button fx:id="enrollButton"
+                            text="Enroll Now"
+                            onAction="#handleEnroll"
+                            styleClass="enroll-button"
+                            maxWidth="Infinity"/>
+
+                    <!-- Continue Learning Button (hidden by default) -->
+                    <Button fx:id="continueButton"
+                            text="Continue Learning"
+                            onAction="#handleContinue"
+                            styleClass="continue-button"
+                            maxWidth="Infinity"
+                            visible="false"
+                            managed="false"/>
+
+                    <!-- Guarantees -->
+                    <VBox spacing="5" styleClass="guarantees">
+                        <Label text="✓ Full Lifetime Access" styleClass="guarantee-text"/>
+                        <Label text="✓ Access on mobile and TV" styleClass="guarantee-text"/>
+                        <Label text="✓ Certificate of completion" styleClass="guarantee-text"/>
+                    </VBox>
+
+                    <!-- Share Options -->
+                    <HBox spacing="10" alignment="CENTER">
+                        <Hyperlink text="Share" styleClass="share-link"/>
+                        <Hyperlink text="Gift this course" styleClass="share-link"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </right>
+    </BorderPane>
+
+    <stylesheets>
+        <URL value="@../styles/course-detail.css"/>
+    </stylesheets>
+</ScrollPane>

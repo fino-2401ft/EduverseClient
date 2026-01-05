@@ -94,7 +94,7 @@ public class MediaStreamManager {
 
             // ============ VIDEO ============
             // Use Singleton Camera
-            cameraCapture = CameraCapture.getInstance("OBS");
+            cameraCapture = CameraCapture.getInstance();
 
             videoSender = new UDPVideoSender(videoSocket, myPeer.getUserId());
             videoReceiver = new UDPVideoReceiver(videoSocket);
@@ -109,7 +109,9 @@ public class MediaStreamManager {
                         // Send to host (if participant) or broadcast (if host)
                         if (myEnrollment.getRole() == MeetingRole.HOST) {
                             // Host: broadcast to all participants
-                            updatePeerList();
+                          //  updatePeerList();
+
+
                             if (otherPeers != null && videoSender != null) {
                                 otherPeers.forEach(peer -> {
                                     try {
@@ -140,7 +142,7 @@ public class MediaStreamManager {
             });
             microphoneCapture.start(audioData -> {
                 if (myEnrollment.getRole() == MeetingRole.HOST) {
-                    updatePeerList();
+                  //  updatePeerList();
                     if (otherPeers != null && audioSender != null) {
                         otherPeers.forEach(peer -> {
                             try {
@@ -364,8 +366,7 @@ public class MediaStreamManager {
     // --- FORWARDING METHODS ---
 
     private void forwardChatToOthers(String senderId, String message) {
-        // Ensure peer list is fresh
-        updatePeerList();
+     //   updatePeerList();
 
         forwardData(senderId, (peer) ->
                 // USE forwardMessage TO PRESERVE ORIGINAL SENDER ID
@@ -374,7 +375,7 @@ public class MediaStreamManager {
     }
 
     private void forwardVideoToOthers(String senderId, Image receivedImage) {
-        updatePeerList();
+       // updatePeerList();
         byte[] frameData = convertImageToBytes(receivedImage);
         if (frameData != null) {
             forwardData(senderId, (peer) ->
@@ -383,7 +384,7 @@ public class MediaStreamManager {
     }
 
     private void forwardAudioToOthers(String senderId, byte[] audioData) {
-        updatePeerList();
+     //   updatePeerList();
         forwardData(senderId, (peer) ->
                 audioSender.sendAudio(audioData, peer.getIpAddress(), peer.getAudioPort()));
     }

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.image.ImageView?>
+<?import java.net.URL?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.HomeDashboardController"
+            fitToWidth="true"
+            styleClass="home-scroll-pane">
+    
+    <VBox fx:id="mainContainer" spacing="0" styleClass="home-container">
+        
+        <!-- Hero Banner -->
+        <VBox styleClass="hero-banner" alignment="CENTER" spacing="10">
+            <Label text="Chào mừng đến với Eduverse" styleClass="hero-title"/>
+            <Label text="Nền tảng học tập trực tuyến hàng đầu" styleClass="hero-subtitle"/>
+        </VBox>
+        
+        <!-- Trusted Companies Section -->
+        <VBox spacing="15" styleClass="section-container" alignment="CENTER">
+            <Label text="Được tin dùng bởi hàng nghìn học viên và doanh nghiệp" 
+                   styleClass="section-subtitle"/>
+            <HBox fx:id="companiesContainer" spacing="30" alignment="CENTER">
+                <!-- Company logos will be added dynamically -->
+            </HBox>
+        </VBox>
+        
+        <!-- Popular Courses Section -->
+        <VBox spacing="15" styleClass="section-container">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Khóa học phổ biến" styleClass="section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Hyperlink text="Xem tất cả →" styleClass="view-all-link"
+                           onAction="#viewAllCourses"/>
+            </HBox>
+            <FlowPane fx:id="coursesContainer" 
+                      hgap="15" 
+                      vgap="15"
+                      styleClass="courses-grid">
+                <!-- Course cards will be added dynamically -->
+            </FlowPane>
+        </VBox>
+        
+        <!-- Teachers Section -->
+        <VBox spacing="15" styleClass="section-container">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Giảng viên nổi bật" styleClass="section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Hyperlink text="Xem tất cả →" styleClass="view-all-link"
+                           onAction="#viewAllTeachers"/>
+            </HBox>
+            <ScrollPane fitToHeight="true" 
+                        hbarPolicy="AS_NEEDED" 
+                        vbarPolicy="NEVER"
+                        styleClass="teachers-scroll">
+                <HBox fx:id="teachersContainer" spacing="20" styleClass="teachers-container">
+                    <!-- Teacher cards will be added dynamically -->
+                </HBox>
+            </ScrollPane>
+        </VBox>
+        
+        <!-- Testimonials Section -->
+        <VBox spacing="15" styleClass="section-container testimonials-section">
+            <Label text="Tham gia cùng hàng nghìn người đang thay đổi cuộc sống qua việc học" 
+                   styleClass="section-subtitle" alignment="CENTER"/>
+            <FlowPane fx:id="testimonialsContainer" 
+                      hgap="15" 
+                      vgap="15"
+                      styleClass="testimonials-grid">
+                <!-- Testimonial cards will be added dynamically -->
+            </FlowPane>
+            <HBox alignment="CENTER">
+                <Hyperlink text="Xem tất cả các câu chuyện →" 
+                           styleClass="view-all-link"
+                           onAction="#viewAllTestimonials"/>
+            </HBox>
+        </VBox>
+        
+        <!-- Certifications Section -->
+        <VBox spacing="15" styleClass="certifications-section">
+            <HBox spacing="30" alignment="CENTER_LEFT">
+                <VBox spacing="15" HBox.hgrow="ALWAYS">
+                    <Label text="Lấy chứng chỉ và thăng tiến trong sự nghiệp" 
+                           styleClass="cert-title"/>
+                    <Label text="Luyện thi các chứng chỉ với các khóa học toàn diện, bài kiểm tra thực hành và ưu đãi đặc biệt về voucher kỳ thi." 
+                           styleClass="cert-description"
+                           wrapText="true"/>
+                    <Hyperlink text="Khám phá các chứng chỉ và voucher →" 
+                               styleClass="cert-link"
+                               onAction="#viewCertifications"/>
+                </VBox>
+                <HBox fx:id="certificationsContainer" spacing="15" 
+                      alignment="CENTER"
+                      styleClass="certifications-container">
+                    <!-- Certification cards will be added dynamically -->
+                </HBox>
+            </HBox>
+        </VBox>
+        
+        <!-- Bottom spacing -->
+        <Region VBox.vgrow="ALWAYS" minHeight="50"/>
+        
+    </VBox>
+    
+    <stylesheets>
+        <URL value="@../styles/home-dashboard.css"/>
+    </stylesheets>
+</ScrollPane>

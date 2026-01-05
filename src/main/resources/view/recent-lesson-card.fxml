@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<HBox fx:id="root" 
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.RecentLessonCardController"
+      styleClass="recent-lesson-card"
+      spacing="15"
+      alignment="CENTER_LEFT">
+    
+    <!-- Course Thumbnail (small) -->
+    <ImageView fx:id="courseThumbnail"
+               fitWidth="120"
+               fitHeight="68"
+               preserveRatio="true"
+               styleClass="lesson-course-thumbnail"/>
+    
+    <!-- Content -->
+    <VBox spacing="5" HBox.hgrow="ALWAYS">
+        <!-- Course Title -->
+        <Label fx:id="courseTitleLabel" 
+               styleClass="lesson-course-title"/>
+        
+        <!-- Lesson Title -->
+        <Label fx:id="lessonTitleLabel" 
+               styleClass="lesson-title"
+               wrapText="true"/>
+        
+        <!-- Progress and Duration -->
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <ProgressBar fx:id="lessonProgressBar" 
+                        prefWidth="200"
+                        styleClass="lesson-progress-bar"/>
+            <Label fx:id="durationLabel" styleClass="lesson-duration"/>
+        </HBox>
+    </VBox>
+    
+    <!-- Action Button -->
+    <Button fx:id="resumeButton"
+            text="Resume"
+            onAction="#handleResume"
+            styleClass="resume-button"/>
+
+    <stylesheets>
+        <URL value="@../styles/course-dashboard.css"/>
+    </stylesheets>
+</HBox>

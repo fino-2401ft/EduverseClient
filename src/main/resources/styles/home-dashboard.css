@@ -1,0 +1,284 @@
+/* Home Dashboard Styles */
+
+.home-scroll-pane {
+    -fx-background-color: #f7f9fa;
+    -fx-border-width: 0;
+    -fx-fit-to-width: true;
+}
+
+.home-container {
+    -fx-background-color: #f7f9fa;
+    -fx-padding: 0;
+    -fx-min-width: 0;
+}
+
+/* Hero Banner */
+.hero-banner {
+    -fx-background-color: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+    -fx-padding: 40 20;
+    -fx-min-height: 150;
+}
+
+.hero-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.hero-subtitle {
+    -fx-text-fill: rgba(255,255,255,0.9);
+    -fx-font-size: 18px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+/* Section Container */
+.section-container {
+    -fx-background-color: white;
+    -fx-padding: 30 20;
+    -fx-border-color: #e9ecef;
+    -fx-border-width: 0 0 1 0;
+}
+
+.section-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.section-subtitle {
+    -fx-font-size: 18px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.view-all-link {
+    -fx-font-size: 14px;
+    -fx-text-fill: #5624d0;
+    -fx-underline: false;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.view-all-link:hover {
+    -fx-underline: true;
+}
+
+/* Companies Container */
+.companies-container {
+    -fx-padding: 20 0;
+}
+
+.company-logo {
+    -fx-opacity: 0.7;
+    -fx-cursor: hand;
+}
+
+.company-logo:hover {
+    -fx-opacity: 1.0;
+}
+
+/* Courses Grid */
+.courses-grid {
+    -fx-padding: 10 0;
+}
+
+/* Teachers Section */
+.teachers-scroll {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.teachers-container {
+    -fx-padding: 10 0;
+}
+
+.teacher-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-cursor: hand;
+    -fx-min-width: 220;
+    -fx-pref-width: 220;
+    -fx-max-width: 220;
+    -fx-alignment: CENTER;
+}
+
+.teacher-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.teacher-avatar {
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+    -fx-border-color: #dee2e6;
+    -fx-border-width: 3;
+}
+
+.teacher-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.teacher-title {
+    -fx-font-size: 13px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.teacher-stats {
+    -fx-font-size: 12px;
+    -fx-text-fill: #868e96;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+/* Testimonials Section */
+.testimonials-section {
+    -fx-background-color: #f7f9fa;
+}
+
+.testimonials-grid {
+    -fx-padding: 20 0;
+}
+
+.testimonial-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 25;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-min-width: 280;
+    -fx-pref-width: 280;
+    -fx-max-width: 280;
+}
+
+.testimonial-quote {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-wrap-text: true;
+    -fx-line-spacing: 4px;
+}
+
+.testimonial-source {
+    -fx-padding: 15 0 0 0;
+}
+
+.testimonial-author {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.testimonial-role {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.testimonial-link {
+    -fx-font-size: 14px;
+    -fx-text-fill: #5624d0;
+    -fx-underline: false;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+    -fx-padding: 10 0 0 0;
+}
+
+.testimonial-link:hover {
+    -fx-underline: true;
+}
+
+/* Certifications Section */
+.certifications-section {
+    -fx-background-color: linear-gradient(to right, #1e3c72 0%, #2a5298 100%);
+    -fx-padding: 50 30;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.cert-title {
+    -fx-text-fill: white;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.cert-description {
+    -fx-text-fill: rgba(255,255,255,0.9);
+    -fx-font-size: 16px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.cert-link {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-underline: false;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+}
+
+.cert-link:hover {
+    -fx-underline: true;
+}
+
+.certifications-container {
+    -fx-padding: 10 0;
+}
+
+.cert-card {
+    -fx-background-color: rgba(255,255,255,0.1);
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-border-width: 1;
+    -fx-padding: 20;
+    -fx-cursor: hand;
+    -fx-min-width: 200;
+    -fx-pref-width: 200;
+    -fx-max-width: 200;
+}
+
+.cert-card:hover {
+    -fx-background-color: rgba(255,255,255,0.15);
+}
+
+.cert-name {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.cert-tags {
+    -fx-text-fill: rgba(255,255,255,0.8);
+    -fx-font-size: 13px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-padding: 10 0 0 0;
+}
+
+.cert-badges {
+    -fx-padding: 15 0 0 0;
+    -fx-spacing: 8;
+}
+
+.cert-badge {
+    -fx-background-color: rgba(255,255,255,0.2);
+    -fx-background-radius: 4;
+    -fx-padding: 5 10;
+}
+
+.cert-badge-label {
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+

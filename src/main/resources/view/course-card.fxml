@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<?import javafx.scene.image.ImageView?>
+<?import java.net.URL?>
+<VBox fx:id="root" 
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.CourseCardController"
+      styleClass="course-card"
+      spacing="10">
+    
+    <!-- Thumbnail -->
+    <ImageView fx:id="thumbnailImage"
+               fitWidth="280"
+               fitHeight="157"
+               preserveRatio="true"
+               styleClass="course-thumbnail">
+        <VBox.margin>
+            <Insets bottom="5"/>
+        </VBox.margin>
+    </ImageView>
+    
+    <!-- Content -->
+    <VBox spacing="5" styleClass="course-content">
+        <!-- Title -->
+        <Label fx:id="titleLabel" 
+               styleClass="course-title"
+               wrapText="true"
+               maxWidth="280"/>
+        
+        <!-- Teacher Name -->
+        <Label fx:id="teacherLabel" 
+               styleClass="course-teacher"/>
+        
+        <!-- Student Count (Optional) -->
+        <Label fx:id="studentCountLabel" 
+               styleClass="course-student-count"/>
+        
+        <!-- Action Button -->
+        <Button fx:id="actionButton"
+                onAction="#handleAction"
+                styleClass="course-action-button"
+                maxWidth="280"/>
+    </VBox>
+
+
+    <stylesheets>
+        <URL value="@../styles/course-dashboard.css"/>
+    </stylesheets>
+</VBox>

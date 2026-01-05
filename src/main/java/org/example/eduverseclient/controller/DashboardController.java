@@ -50,11 +50,47 @@ public class DashboardController {
             audioPortLabel.setText("Audio: " + myPeer.getAudioPort());
             chatPortLabel.setText("Chat: " + myPeer.getChatPort());
         }
+        
+        // Load Home Dashboard mặc định
+        showHome();
+    }
+    
+    @FXML
+    private void showHome() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/home-dashboard.fxml")
+            );
+            
+            Node homeView = loader.load();
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(homeView);
+            
+            log.info("✅ Home Dashboard loaded");
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to load home dashboard", e);
+            showInfo("Không thể tải Home Dashboard!");
+        }
     }
     
     @FXML
     private void showCourses() {
-        showInfo("Chức năng Khóa học đang được phát triển");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/course-dashboard.fxml")
+            );
+            
+            Node courseView = loader.load();
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(courseView);
+            
+            log.info("✅ Course Dashboard loaded");
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to load course dashboard", e);
+            showInfo("Không thể tải Course Dashboard!");
+        }
     }
 
     @FXML

@@ -1,0 +1,492 @@
+/* Course Dashboard Styles */
+
+/* Root and Container */
+.dashboard-scroll-pane {
+    -fx-background-color: #f7f9fa;
+    -fx-border-width: 0;
+    -fx-fit-to-width: true;
+}
+
+.dashboard-container {
+    -fx-background-color: #f7f9fa;
+    -fx-padding: 15;
+    -fx-min-width: 0;
+}
+
+/* Top Bar */
+.top-bar {
+    -fx-background-color: white;
+    -fx-padding: 15 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-margin: 0 0 20 0;
+}
+
+.search-field {
+    -fx-pref-height: 40;
+    -fx-background-color: #f3f4f6;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-width: 0;
+    -fx-padding: 10 20;
+    -fx-font-size: 14px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.search-field:focused {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,123,255,0.3), 10, 0, 0, 0);
+}
+
+.filter-button {
+    -fx-pref-width: 100;
+    -fx-pref-height: 40;
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+}
+
+.filter-button:hover {
+    -fx-background-color: #0056b3;
+    -fx-effect: dropshadow(gaussian, rgba(0,123,255,0.4), 10, 0, 0, 0);
+}
+
+.filter-button:pressed {
+    -fx-background-color: #004085;
+}
+
+/* Hero Section */
+.hero-section {
+    -fx-background-color: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+    -fx-background-radius: 12;
+    -fx-padding: 25 20;
+    -fx-min-height: 120;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
+    -fx-margin: 0 0 20 0;
+}
+
+.hero-title {
+    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.hero-subtitle {
+    -fx-text-fill: rgba(255,255,255,0.9);
+    -fx-font-size: 14px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+/* Section Container */
+.section-container {
+    -fx-padding: 15 0;
+}
+
+.section-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.section-count {
+    -fx-font-size: 16px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+/* Categories */
+.categories-scroll {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.categories-container {
+    -fx-padding: 10 0;
+}
+
+.category-chip {
+    -fx-background-color: white;
+    -fx-text-fill: #495057;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: #dee2e6;
+    -fx-border-width: 1;
+    -fx-padding: 8 20;
+    -fx-font-size: 14px;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+    -fx-min-width: 100;
+}
+
+.category-chip:hover {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #007bff;
+}
+
+.category-chip-active {
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+    -fx-border-color: #007bff;
+}
+
+.category-chip-active:hover {
+    -fx-background-color: #0056b3;
+}
+
+/* Courses Scroll */
+.courses-scroll {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.courses-container {
+    -fx-padding: 10 0;
+}
+
+/* Popular Courses Container */
+.popular-courses-container {
+    -fx-padding: 10 0;
+    -fx-hgap: 15;
+    -fx-vgap: 15;
+}
+
+/* Course Card */
+.course-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-cursor: hand;
+    -fx-min-width: 280;
+    -fx-pref-width: 280;
+    -fx-max-width: 280;
+}
+
+.course-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.course-thumbnail {
+    -fx-background-color: #e9ecef;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.placeholder-thumbnail {
+    /* Sửa dòng này: Dùng cú pháp "from ... to ..." của JavaFX */
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #667eea 0%, #764ba2 100%);
+
+    -fx-background-radius: 8 8 0 0;
+}
+
+.course-content {
+    -fx-padding: 15;
+}
+
+.course-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-min-height: 40;
+    -fx-max-height: 40;
+}
+
+.course-teacher {
+    -fx-font-size: 13px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.course-student-count {
+    -fx-font-size: 12px;
+    -fx-text-fill: #868e96;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.course-action-button {
+    -fx-pref-height: 40;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+    -fx-margin-top: 10;
+}
+
+.button-enroll {
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+}
+
+.button-enroll:hover {
+    -fx-background-color: #0056b3;
+    -fx-effect: dropshadow(gaussian, rgba(0,123,255,0.4), 10, 0, 0, 0);
+}
+
+.button-continue {
+    -fx-background-color: #28a745;
+    -fx-text-fill: white;
+}
+
+.button-continue:hover {
+    -fx-background-color: #218838;
+    -fx-effect: dropshadow(gaussian, rgba(40,167,69,0.4), 10, 0, 0, 0);
+}
+
+/* My Course Card (with Progress) */
+.my-course-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-cursor: hand;
+    -fx-min-width: 280;
+    -fx-pref-width: 280;
+    -fx-max-width: 280;
+}
+
+.my-course-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.progress-section {
+    -fx-padding: 10 0;
+}
+
+.progress-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.progress-percent {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #007bff;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.course-progress-bar {
+    -fx-pref-height: 8;
+    -fx-background-color: #e9ecef;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+
+.course-progress-bar .bar {
+    -fx-background-color: #007bff;
+    -fx-background-radius: 4;
+}
+
+.lessons-info {
+    -fx-font-size: 11px;
+    -fx-text-fill: #868e96;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+/* Recent Lessons List */
+.lessons-list-container {
+    -fx-padding: 10 0;
+}
+
+.recent-lesson-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);
+    -fx-cursor: hand;
+}
+
+.recent-lesson-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-background-color: #f8f9fa;
+}
+
+.lesson-course-thumbnail {
+    -fx-background-color: #e9ecef;
+    -fx-background-radius: 6;
+}
+
+.lesson-course-title {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.lesson-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.lesson-progress-bar {
+    -fx-pref-height: 6;
+    -fx-background-color: #e9ecef;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+.lesson-progress-bar .bar {
+    -fx-background-color: #28a745;
+    -fx-background-radius: 3;
+}
+
+.lesson-duration {
+    -fx-font-size: 12px;
+    -fx-text-fill: #868e96;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.resume-button {
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 8 20;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+}
+
+.resume-button:hover {
+    -fx-background-color: #0056b3;
+}
+
+/* Recent Exam Results List */
+.exams-list-container {
+    -fx-padding: 10 0;
+}
+
+.recent-exam-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);
+    -fx-cursor: hand;
+}
+
+.recent-exam-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-background-color: #f8f9fa;
+}
+
+.exam-icon-container {
+    -fx-min-width: 50;
+    -fx-pref-width: 50;
+    -fx-alignment: CENTER;
+}
+
+.exam-status-icon {
+    -fx-font-size: 24px;
+}
+
+.exam-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.exam-course-name {
+    -fx-font-size: 13px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.exam-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #868e96;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.exam-score {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.exam-date {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6c757d;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+.exam-status {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-padding: 4 10;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+
+.exam-status-passed {
+    -fx-text-fill: #28a745;
+    -fx-background-color: #d4edda;
+}
+
+.exam-status-failed {
+    -fx-text-fill: #dc3545;
+    -fx-background-color: #f8d7da;
+}
+
+.exam-status-pending {
+    -fx-text-fill: #ffc107;
+    -fx-background-color: #fff3cd;
+}
+
+.view-exam-button {
+    -fx-background-color: #6c757d;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 8 20;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-cursor: hand;
+}
+
+.view-exam-button:hover {
+    -fx-background-color: #5a6268;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .course-card {
+        -fx-min-width: 250;
+        -fx-max-width: 250;
+    }
+    
+    .my-course-card {
+        -fx-min-width: 250;
+        -fx-max-width: 250;
+    }
+    
+    .search-field {
+        -fx-pref-width: 300;
+    }
+}
+

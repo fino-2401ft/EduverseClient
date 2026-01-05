@@ -13,7 +13,10 @@
         <HBox style="-fx-background-color: #1976D2; -fx-padding: 15;"
               spacing="20" alignment="CENTER_LEFT">
 
-            <Label text="EDUVERSE" style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;"/>
+            <Label text="EDUVERSE" 
+                   fx:id="appTitleLabel"
+                   onMouseClicked="#showHome"
+                   style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region HBox.hgrow="ALWAYS"/>
 

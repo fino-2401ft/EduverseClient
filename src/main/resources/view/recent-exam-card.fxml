@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<HBox fx:id="root" 
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.RecentExamCardController"
+      styleClass="recent-exam-card"
+      spacing="15"
+      alignment="CENTER_LEFT">
+    
+    <!-- Exam Icon/Status -->
+    <VBox alignment="CENTER" styleClass="exam-icon-container">
+        <Label fx:id="examStatusIcon" 
+               styleClass="exam-status-icon"
+               text="📝"/>
+    </VBox>
+    
+    <!-- Content -->
+    <VBox spacing="5" HBox.hgrow="ALWAYS">
+        <!-- Exam Title -->
+        <Label fx:id="examTitleLabel" 
+               styleClass="exam-title"/>
+        
+        <!-- Course Name -->
+        <Label fx:id="courseNameLabel" 
+               styleClass="exam-course-name"/>
+        
+        <!-- Score and Date -->
+        <HBox spacing="15" alignment="CENTER_LEFT">
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <Label text="Score:" styleClass="exam-label"/>
+                <Label fx:id="scoreLabel" styleClass="exam-score"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <Label text="Date:" styleClass="exam-label"/>
+                <Label fx:id="dateLabel" styleClass="exam-date"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <Label fx:id="statusLabel" styleClass="exam-status"/>
+            </HBox>
+        </HBox>
+    </VBox>
+    
+    <!-- Action Button -->
+    <Button fx:id="viewButton"
+            text="View Details"
+            onAction="#handleView"
+            styleClass="view-exam-button"/>
+
+    <stylesheets>
+        <URL value="@../styles/course-dashboard.css"/>
+    </stylesheets>
+</HBox>

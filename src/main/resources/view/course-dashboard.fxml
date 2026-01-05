@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<?import java.net.URL?>
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.CourseDashboardController"
+            fitToWidth="true"
+            styleClass="dashboard-scroll-pane">
+    
+    <VBox fx:id="mainContainer" spacing="0" styleClass="dashboard-container">
+        
+        <!-- Top Bar: Search and Filter -->
+        <HBox styleClass="top-bar" spacing="15" alignment="CENTER_LEFT">
+            <TextField fx:id="searchField" 
+                       promptText="Search for courses..."
+                       styleClass="search-field"
+                       HBox.hgrow="ALWAYS"/>
+            <Button text="Filter" 
+                    onAction="#handleFilter"
+                    styleClass="filter-button"/>
+        </HBox>
+        
+        <!-- Hero Section -->
+        <VBox fx:id="heroSection" styleClass="hero-section" alignment="CENTER_LEFT">
+            <Label fx:id="heroTitle" text="Welcome back, continue learning" 
+                   styleClass="hero-title"/>
+            <Label fx:id="heroSubtitle" text="Discover new courses and expand your skills" 
+                   styleClass="hero-subtitle"/>
+        </VBox>
+        
+        <!-- Categories Section -->
+        <VBox spacing="10" styleClass="section-container">
+            <Label text="Categories" styleClass="section-title"/>
+            <ScrollPane fitToHeight="true" 
+                        hbarPolicy="AS_NEEDED" 
+                        vbarPolicy="NEVER"
+                        styleClass="categories-scroll">
+                <HBox fx:id="categoriesContainer" spacing="10" styleClass="categories-container">
+                    <!-- Categories will be added dynamically -->
+                </HBox>
+            </ScrollPane>
+        </VBox>
+        
+        <!-- My Courses Section -->
+        <VBox spacing="10" styleClass="section-container">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="My Courses" styleClass="section-title"/>
+                <Label fx:id="myCoursesCount" text="(0)" styleClass="section-count"/>
+            </HBox>
+            <ScrollPane fitToHeight="true" 
+                        hbarPolicy="AS_NEEDED" 
+                        vbarPolicy="NEVER"
+                        styleClass="courses-scroll">
+                <HBox fx:id="myCoursesContainer" spacing="15" styleClass="courses-container">
+                    <!-- Course cards with progress will be added dynamically -->
+                </HBox>
+            </ScrollPane>
+        </VBox>
+        
+        <!-- Recent Lessons Section -->
+        <VBox spacing="10" styleClass="section-container">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Recent Lessons" styleClass="section-title"/>
+                <Label fx:id="recentLessonsCount" text="(0)" styleClass="section-count"/>
+            </HBox>
+            <VBox fx:id="recentLessonsContainer" spacing="10" styleClass="lessons-list-container">
+                <!-- Recent lesson cards will be added dynamically -->
+            </VBox>
+        </VBox>
+        
+        <!-- Recent Exam Results Section -->
+        <VBox spacing="10" styleClass="section-container">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Recent Exam Results" styleClass="section-title"/>
+                <Label fx:id="recentExamsCount" text="(0)" styleClass="section-count"/>
+            </HBox>
+            <VBox fx:id="recentExamsContainer" spacing="10" styleClass="exams-list-container">
+                <!-- Recent exam result cards will be added dynamically -->
+            </VBox>
+        </VBox>
+        
+        <!-- Popular Courses Section -->
+        <VBox spacing="10" styleClass="section-container">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Popular Courses" styleClass="section-title"/>
+                <Label fx:id="popularCoursesCount" text="(0)" styleClass="section-count"/>
+            </HBox>
+            <FlowPane fx:id="popularCoursesContainer" 
+                      hgap="15" 
+                      vgap="15"
+                      styleClass="popular-courses-container">
+                <!-- Course cards will be added dynamically -->
+            </FlowPane>
+        </VBox>
+        
+        <!-- Bottom spacing -->
+        <Region VBox.vgrow="ALWAYS" minHeight="50"/>
+        
+    </VBox>
+
+    <stylesheets>
+        <URL value="@../styles/course-dashboard.css"/>
+    </stylesheets>
+</ScrollPane>
