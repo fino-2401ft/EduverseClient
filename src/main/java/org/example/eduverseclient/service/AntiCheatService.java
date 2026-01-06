@@ -41,17 +41,23 @@ public class AntiCheatService {
                 log.debug("🔍 Analyzing frame - User: {}, Exam: {}, Frame size: {} bytes", userId, examId, imageBytes.length);
                 
                 String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+                log.debug("📦 Base64 encoded size: {} characters", base64Image.length());
                 
-                // Manual JSON construction
-                String jsonBody = String.format(
-                    "{\"user_id\":\"%s\",\"session_id\":\"%s\",\"frame_base64\":\"%s\"}",
-                    escapeJson(userId), escapeJson(examId), base64Image
-                );
+                // Manual JSON construction - use StringBuilder for large base64 strings
+                StringBuilder jsonBuilder = new StringBuilder();
+                jsonBuilder.append("{");
+                jsonBuilder.append("\"user_id\":\"").append(escapeJson(userId)).append("\",");
+                jsonBuilder.append("\"session_id\":\"").append(escapeJson(examId)).append("\",");
+                jsonBuilder.append("\"frame_base64\":\"").append(base64Image).append("\"");
+                jsonBuilder.append("}");
+                String jsonBody = jsonBuilder.toString();
 
-                log.debug("📤 Sending request to AI service: {}", AI_SERVICE_URL);
+                log.debug("📤 Sending request to AI service: {} (JSON body size: {} chars)", AI_SERVICE_URL, jsonBody.length());
+                log.debug("📋 Request preview (first 200 chars): {}", jsonBody.length() > 200 ? jsonBody.substring(0, 200) + "..." : jsonBody);
+                
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(AI_SERVICE_URL))
-                        .header("Content-Type", "application/json")
+                        .header("Content-Type", "application/json; charset=UTF-8")
                         .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                         .timeout(TIMEOUT)
                         .build();
