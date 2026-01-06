@@ -1,6 +1,5 @@
 package org.example.eduverseclient.service;
 
-import common.enums.ConversationType;
 import common.model.Conversation;
 import common.model.Message;
 import common.model.User;

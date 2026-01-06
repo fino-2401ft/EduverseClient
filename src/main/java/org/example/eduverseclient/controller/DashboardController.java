@@ -110,22 +110,25 @@ public class DashboardController {
         }
     }
     
-    @FXML
-    private void showChat() {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/chat-view.fxml")
-            );    Node chatView = loader.load();
-            contentPane.getChildren().clear();
-            contentPane.getChildren().add(chatView);} catch (Exception e) {
-            log.error("Failed to load chat view", e);
-            showInfo("Không thể tải chat!");
-        }
-    }
+
     
     @FXML
     private void showExams() {
-        showInfo("Chức năng Bài thi đang được phát triển");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/exam-list.fxml")
+            );
+
+            Node examView = loader.load();
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(examView);
+
+            log.info("✅ Exam List loaded");
+
+        } catch (Exception e) {
+            log.error("❌ Failed to load exam list", e);
+            showInfo("Không thể tải danh sách bài thi!");
+        }
     }
     
     @FXML
@@ -146,6 +149,20 @@ public class DashboardController {
         });
     }
 
+    @FXML
+    private void showMessenger() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/messenger-view.fxml")
+            );
+            Node messengerView = loader.load();
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(messengerView);
+        } catch (Exception e) {
+            log.error("Failed to load messenger view", e);
+            showInfo("Không thể tải messenger!");
+        }
+    }
 
     
     private void backToLogin() {

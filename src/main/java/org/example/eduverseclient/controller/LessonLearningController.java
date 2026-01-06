@@ -118,29 +118,22 @@ public class LessonLearningController {
         });
     }
 
-    /**
-     * Load enrollment data
-     */
-    private void loadEnrollment() {
-        if (currentUserId == null) return;
+    private void updateCompleteButton() {
+        if (currentLesson == null) return;
 
-        CompletableFuture.supplyAsync(() -> {
-            return courseService.getEnrollmentByCourseAndStudent(
-                    course.getCourseId(),
-                    currentUserId
-            );
-        }).thenAccept(loadedEnrollment -> {
-            Platform.runLater(() -> {
-                if (loadedEnrollment != null) {
-                    this.enrollment = loadedEnrollment;
-                    this.completedLessonIds = enrollment.getCompletedLessonIds() != null
-                            ? new ArrayList<>(enrollment.getCompletedLessonIds())
-                            : new ArrayList<>();
-                    updateProgress();
-                }
-            });
-        });
+        boolean isCompleted = completedLessonIds != null && completedLessonIds.contains(currentLesson.getLessonId());
+
+        if (isCompleted) {
+            completeButton.setText("✓ Completed");
+            completeButton.getStyleClass().add("completed");
+            completeButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;"); // Màu xanh lá
+        } else {
+            completeButton.setText("Mark as Complete");
+            completeButton.getStyleClass().remove("completed");
+            completeButton.setStyle("-fx-background-color: #a435f0; -fx-text-fill: white;"); // Màu tím mặc định
+        }
     }
+
 
     /**
      * Load and display current lesson
@@ -177,6 +170,17 @@ public class LessonLearningController {
 
         // Load resources
         loadResources();
+
+        // --- THÊM ĐOẠN NÀY ---
+        // Kiểm tra lại trạng thái nút mỗi khi chuyển bài
+        if (enrollment == null) {
+            completeButton.setDisable(true);
+            completeButton.setText("Enroll to Complete");
+        }
+        else {
+            completeButton.setDisable(false);
+            updateCompleteButton(); // Hàm này sẽ set text "Mark as Complete" hoặc "✓ Completed"
+        }
     }
 
     /**
@@ -325,29 +329,8 @@ public class LessonLearningController {
     /**
      * Update complete button
      */
-    private void updateCompleteButton() {
-        boolean isCompleted = completedLessonIds.contains(currentLesson.getLessonId());
 
-        if (isCompleted) {
-            completeButton.setText("✓ Completed");
-            completeButton.getStyleClass().add("completed");
-        } else {
-            completeButton.setText("Mark as Complete");
-            completeButton.getStyleClass().remove("completed");
-        }
-    }
 
-    /**
-     * Update progress
-     */
-    private void updateProgress() {
-        int completed = completedLessonIds.size();
-        int total = lessons.size();
-        double progress = total > 0 ? (double) completed / total : 0;
-
-        progressLabel.setText(completed + "/" + total + " completed");
-        progressBar.setProgress(progress);
-    }
 
     /**
      * Highlight current lesson in sidebar
@@ -419,34 +402,126 @@ public class LessonLearningController {
      */
     @FXML
     private void handleMarkComplete() {
-        if (currentLesson == null || enrollment == null) return;
-
-        boolean isCompleted = completedLessonIds.contains(currentLesson.getLessonId());
-
-        if (isCompleted) {
-            // Already completed, do nothing or toggle
+        if (currentLesson == null || enrollment == null) {
+            showError("Dữ liệu khóa học chưa tải xong hoặc bạn chưa tham gia khóa này!");
             return;
         }
 
-        // Mark as complete
-        completedLessonIds.add(currentLesson.getLessonId());
+        boolean isCompleted = completedLessonIds.contains(currentLesson.getLessonId());
 
-        // TODO: Update enrollment in database
-        CompletableFuture.runAsync(() -> {
-            // Call service to update enrollment
-            log.info("✅ Marked lesson {} as complete", currentLesson.getLessonId());
-        }).thenRun(() -> {
+        // Nếu đã hoàn thành rồi thì thôi (hoặc có thể làm logic bỏ hoàn thành nếu muốn)
+        if (isCompleted) {
+            return;
+        }
+
+        // Disable nút để tránh spam click
+        completeButton.setDisable(true);
+        completeButton.setText("Updating...");
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                // Gọi xuống Service -> DAO -> Firebase để cập nhật
+                return courseService.completeLessonInEnrollment(
+                        enrollment.getEnrollmentId(),
+                        currentLesson.getLessonId(),
+                        lessons.size() // Truyền tổng số bài để tính %
+                );
+            } catch (Exception e) {
+                log.error("Failed to complete lesson", e);
+                return false;
+            }
+        }).thenAccept(success -> {
             Platform.runLater(() -> {
-                updateCompleteButton();
-                updateProgress();
-                displayLessonList();
-                showInfo("Lesson marked as complete! 🎉");
+                completeButton.setDisable(false); // Enable lại nút
 
-                // Auto advance to next lesson
-                if (currentLessonIndex < lessons.size() - 1) {
-                    currentLessonIndex++;
-                    loadCurrentLesson();
+                if (success) {
+                    // 1. Cập nhật list local
+                    if (!completedLessonIds.contains(currentLesson.getLessonId())) {
+                        completedLessonIds.add(currentLesson.getLessonId());
+                    }
+
+                    // 2. Cập nhật UI
+                    updateCompleteButton();
+                    updateProgress();
+                    displayLessonList(); // Refresh sidebar để hiện dấu tick V
+
+                    showInfo("Chúc mừng! Bạn đã hoàn thành bài học. 🎉");
+
+                    //3. Tự động chuyển bài tiếp theo sau 1 giây
+
+                     new java.util.Timer().schedule(new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            Platform.runLater(() -> {
+                                if (currentLessonIndex < lessons.size() - 1) {
+                                    handleNextLesson();
+                                }
+                            });
+                        }
+                    }, 1000);
+
+                } else {
+                    showError("Không thể cập nhật trạng thái bài học. Vui lòng thử lại!");
+                    updateCompleteButton(); // Reset lại text nút
                 }
+            });
+        });
+    }
+    private void updateProgress() {
+        // Nếu lessons chưa load xong thì hiển thị 0/0
+        if (lessons == null || lessons.isEmpty()) {
+            progressLabel.setText("0/0 completed");
+            progressBar.setProgress(0);
+            return;
+        }
+
+        int completed = (completedLessonIds != null) ? completedLessonIds.size() : 0;
+        int total = lessons.size(); // Lấy tổng số bài học thực tế
+
+        double progress = (total > 0) ? (double) completed / total : 0;
+
+        progressLabel.setText(completed + "/" + total + " completed");
+        progressBar.setProgress(progress);
+    }
+
+    private void loadEnrollment() {
+        if (currentUserId == null || course == null) return;
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return courseService.getEnrollmentByCourseAndStudent(
+                        course.getCourseId(),
+                        currentUserId
+                );
+            } catch (Exception e) {
+                log.error("Failed to load enrollment", e);
+                return null;
+            }
+        }).thenAccept(loadedEnrollment -> {
+            Platform.runLater(() -> {
+                if (loadedEnrollment != null) {
+                    this.enrollment = loadedEnrollment;
+
+                    // Load danh sách bài đã học từ database
+                    this.completedLessonIds = enrollment.getCompletedLessonIds() != null
+                            ? new ArrayList<>(enrollment.getCompletedLessonIds())
+                            : new ArrayList<>();
+                } else {
+                    // Trường hợp chưa có enrollment (ví dụ admin xem trước hoặc lỗi data)
+                    System.out.println("Enrollment is null");
+                    log.warn("Enrollment is null for user {} in course {}", currentUserId, course.getCourseId());
+                    this.completedLessonIds = new ArrayList<>();
+                }
+
+                // Quan trọng: Gọi updateProgress ở đây để đảm bảo UI hiển thị đúng
+                // ngay cả khi chưa học bài nào (VD: 0/10)
+                updateProgress();
+
+                // Refresh sidebar để hiện trạng thái các bài học
+                displayLessonList();
+
+                // Cập nhật trạng thái nút bài hiện tại
+                updateCompleteButton();
             });
         });
     }

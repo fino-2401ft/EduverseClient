@@ -7,6 +7,7 @@ import common.model.exam.ExamResult;
 import lombok.extern.slf4j.Slf4j;
 import org.example.eduverseclient.RMIClient;
 
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +87,20 @@ public class CourseService {
             return new ArrayList<>();
         }
     }
-    
+
+    public boolean completeLessonInEnrollment(String enrollmentId, String lessonId, int totalLessons) {
+        try {
+            if (rmiClient == null) {
+                log.error("❌ CourseServiceStub is null");
+                return false;
+            }
+            return rmiClient.getCourseService().completeLessonInEnrollment(enrollmentId, lessonId, totalLessons);
+        } catch (RemoteException e) {
+            log.error("❌ Failed to complete lesson via RMI", e);
+            return false;
+        }
+    }
+
     /**
      * Học viên tham gia khóa học
      */

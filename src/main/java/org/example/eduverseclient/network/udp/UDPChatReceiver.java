@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 @Slf4j
 public class UDPChatReceiver {
@@ -19,20 +18,31 @@ public class UDPChatReceiver {
     private ExecutorService executorService;
     private boolean isRunning = false;
 
-    private static final int HEADER_SIZE = 24;
+    // Header: senderId (36) + conversationId (36) + messageType (4) + contentLength (4) = 80 bytes
+    private static final int HEADER_SIZE = 80;
     private static final int MAX_PACKET_SIZE = 65000;
 
     // Callbacks
-    private BiConsumer<String, String> textMessageCallback; // (senderId, message)
+    private TextMessageCallback textMessageCallback;
     private FileTransferCallback fileCallback;
 
-    // File buffer: senderId -> FileTransferState
+    // File buffer: senderId + "|" + conversationId -> FileTransferState
     private Map<String, FileTransferState> fileTransfers = new ConcurrentHashMap<>();
 
+    /**
+     * Callback interface for text messages
+     */
+    public interface TextMessageCallback {
+        void accept(String senderId, String conversationId, String message);
+    }
+
+    /**
+     * Callback interface for file transfers
+     */
     public interface FileTransferCallback {
-        void onFileStart(String senderId, String fileName, int fileSize, int totalChunks);
-        void onFileChunk(String senderId, int chunkIndex, int totalChunks);
-        void onFileComplete(String senderId, String fileName, byte[] fileData);
+        void onFileStart(String senderId, String conversationId, String fileName, int fileSize, int totalChunks);
+        void onFileChunk(String senderId, String conversationId, int chunkIndex, int totalChunks);
+        void onFileComplete(String senderId, String conversationId, String fileName, byte[] fileData);
     }
 
     private static class FileTransferState {
@@ -42,14 +52,12 @@ public class UDPChatReceiver {
         Map<Integer, byte[]> chunks = new ConcurrentHashMap<>();
     }
 
-    // SỬA CONSTRUCTOR NÀY
     public UDPChatReceiver(DatagramSocket socket) {
         this.socket = socket;
         this.executorService = Executors.newFixedThreadPool(2);
     }
 
-
-    public void start(BiConsumer<String, String> textMessageCallback, FileTransferCallback fileCallback) {
+    public void start(TextMessageCallback textMessageCallback, FileTransferCallback fileCallback) {
         this.textMessageCallback = textMessageCallback;
         this.fileCallback = fileCallback;
         this.isRunning = true;
@@ -73,6 +81,10 @@ public class UDPChatReceiver {
                     byteBuffer.get(senderIdBytes);
                     String senderId = new String(senderIdBytes, StandardCharsets.UTF_8).trim();
 
+                    byte[] conversationIdBytes = new byte[36];
+                    byteBuffer.get(conversationIdBytes);
+                    String conversationId = new String(conversationIdBytes, StandardCharsets.UTF_8).trim();
+
                     int messageType = byteBuffer.getInt();
                     int contentLength = byteBuffer.getInt();
 
@@ -83,16 +95,16 @@ public class UDPChatReceiver {
                     // Handle by type
                     switch (messageType) {
                         case 0: // TEXT
-                            handleTextMessage(senderId, content);
+                            handleTextMessage(senderId, conversationId, content);
                             break;
                         case 1: // FILE_START
-                            handleFileStart(senderId, content);
+                            handleFileStart(senderId, conversationId, content);
                             break;
                         case 2: // FILE_CHUNK
-                            handleFileChunk(senderId, content);
+                            handleFileChunk(senderId, conversationId, content);
                             break;
                         case 3: // FILE_END
-                            handleFileEnd(senderId, content);
+                            handleFileEnd(senderId, conversationId, content);
                             break;
                         default:
                             log.warn("❓ Unknown message type: {}", messageType);
@@ -109,16 +121,16 @@ public class UDPChatReceiver {
         log.info("✅ UDP Chat Receiver started");
     }
 
-    private void handleTextMessage(String senderId, byte[] content) {
+    private void handleTextMessage(String senderId, String conversationId, byte[] content) {
         String message = new String(content, StandardCharsets.UTF_8);
-        log.info("📥 Received chat: {} - {}", senderId, message);
+        log.info("📥 Received chat: senderId={}, conversationId={}, msg={}", senderId, conversationId, message);
 
         if (textMessageCallback != null) {
-            textMessageCallback.accept(senderId, message);
+            textMessageCallback.accept(senderId, conversationId, message);
         }
     }
 
-    private void handleFileStart(String senderId, byte[] content) {
+    private void handleFileStart(String senderId, String conversationId, byte[] content) {
         String metadata = new String(content, StandardCharsets.UTF_8);
         String[] parts = metadata.split("\\|");
 
@@ -136,16 +148,17 @@ public class UDPChatReceiver {
         state.fileSize = fileSize;
         state.totalChunks = totalChunks;
 
-        fileTransfers.put(senderId, state);
+        String transferKey = senderId + "|" + conversationId;
+        fileTransfers.put(transferKey, state);
 
-        log.info("📥 FILE_START: {} ({} bytes, {} chunks)", fileName, fileSize, totalChunks);
+        log.info("📥 FILE_START: {} ({} bytes, {} chunks) from {} in conversation {}", fileName, fileSize, totalChunks, senderId, conversationId);
 
         if (fileCallback != null) {
-            fileCallback.onFileStart(senderId, fileName, fileSize, totalChunks);
+            fileCallback.onFileStart(senderId, conversationId, fileName, fileSize, totalChunks);
         }
     }
 
-    private void handleFileChunk(String senderId, byte[] content) {
+    private void handleFileChunk(String senderId, String conversationId, byte[] content) {
         ByteBuffer buffer = ByteBuffer.wrap(content);
         int chunkIndex = buffer.getInt();
         int totalChunks = buffer.getInt();
@@ -153,27 +166,29 @@ public class UDPChatReceiver {
         byte[] chunkData = new byte[content.length - 8];
         buffer.get(chunkData);
 
-        FileTransferState state = fileTransfers.get(senderId);
+        String transferKey = senderId + "|" + conversationId;
+        FileTransferState state = fileTransfers.get(transferKey);
         if (state == null) {
-            log.error("❌ FILE_CHUNK without FILE_START");
+            log.error("❌ FILE_CHUNK without FILE_START for key: {}", transferKey);
             return;
         }
 
         state.chunks.put(chunkIndex, chunkData);
 
-        log.debug("📥 FILE_CHUNK {}/{}", chunkIndex + 1, totalChunks);
+        log.debug("📥 FILE_CHUNK {}/{} from {} in conversation {}", chunkIndex + 1, totalChunks, senderId, conversationId);
 
         if (fileCallback != null) {
-            fileCallback.onFileChunk(senderId, chunkIndex, totalChunks);
+            fileCallback.onFileChunk(senderId, conversationId, chunkIndex, totalChunks);
         }
     }
 
-    private void handleFileEnd(String senderId, byte[] content) {
+    private void handleFileEnd(String senderId, String conversationId, byte[] content) {
         String fileName = new String(content, StandardCharsets.UTF_8);
 
-        FileTransferState state = fileTransfers.get(senderId);
+        String transferKey = senderId + "|" + conversationId;
+        FileTransferState state = fileTransfers.get(transferKey);
         if (state == null) {
-            log.error("❌ FILE_END without FILE_START");
+            log.error("❌ FILE_END without FILE_START for key: {}", transferKey);
             return;
         }
 
@@ -197,13 +212,13 @@ public class UDPChatReceiver {
             offset += chunk.length;
         }
 
-        log.info("✅ FILE_END: {} - Reassembled {} bytes", fileName, fileData.length);
+        log.info("✅ FILE_END: {} - Reassembled {} bytes from {} in conversation {}", fileName, fileData.length, senderId, conversationId);
 
         if (fileCallback != null) {
-            fileCallback.onFileComplete(senderId, fileName, fileData);
+            fileCallback.onFileComplete(senderId, conversationId, fileName, fileData);
         }
 
-        fileTransfers.remove(senderId);
+        fileTransfers.remove(transferKey);
     }
 
     public void stop() {

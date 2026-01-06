@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.ExamRoomController"
+            prefHeight="800.0" prefWidth="1400.0"
+            style="-fx-background-color: #1E1E1E;">
+
+    <!-- TOP: Exam Info + Timer -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-background-color: #2C2C2C; -fx-padding: 15;">
+            <Label fx:id="examTitleLabel" text="Bài thi"
+                   style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="timerLabel" text="⏱ 00:00:00"
+                   style="-fx-text-fill: #4CAF50; -fx-font-size: 16; -fx-font-weight: bold;"/>
+            <Label fx:id="cameraStatusLabel" text="📹 Camera: BẮT BUỘC BẬT"
+                   style="-fx-text-fill: #4CAF50; -fx-font-size: 13;"/>
+        </HBox>
+    </top>
+
+    <!-- CENTER: Main Content -->
+    <center>
+        <HBox spacing="10" style="-fx-padding: 10;">
+
+            <!-- LEFT: Video Panels -->
+            <!-- Proctor: Grid view để xem nhiều students -->
+            <VBox fx:id="proctorVideoSection" spacing="10" prefWidth="600" style="-fx-background-color: #1E1E1E;" managed="false" visible="false">
+                <Label text="📹 Danh sách thí sinh" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                <GridPane fx:id="videoGrid" hgap="10" vgap="10"
+                          style="-fx-background-color: #1E1E1E;"
+                          VBox.vgrow="ALWAYS">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50"/>
+                        <ColumnConstraints percentWidth="50"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints percentHeight="50"/>
+                        <RowConstraints percentHeight="50"/>
+                    </rowConstraints>
+                </GridPane>
+            </VBox>
+            
+            <!-- Student: 2 cameras (proctor + preview) -->
+            <VBox fx:id="studentVideoSection" spacing="10" prefWidth="600" style="-fx-background-color: #1E1E1E;">
+                <!-- Proctor Camera -->
+                <VBox spacing="5" VBox.vgrow="ALWAYS">
+                    <Label text="📹 Camera giám thị" style="-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <VBox fx:id="proctorVideoContainer" alignment="CENTER" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: #000000; -fx-background-radius: 10;"
+                          minHeight="300">
+                        <Label text="Đang tải camera giám thị..." style="-fx-text-fill: #808080;"/>
+                    </VBox>
+                </VBox>
+                
+                <!-- My Camera Preview -->
+                <VBox spacing="5" VBox.vgrow="ALWAYS">
+                    <Label text="📷 Camera của bạn" style="-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <VBox fx:id="myVideoContainer" alignment="CENTER" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: #000000; -fx-background-radius: 10;"
+                          minHeight="300">
+                        <Label text="Đang tải camera của bạn..." style="-fx-text-fill: #808080;"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+
+            <!-- RIGHT: Exam Questions Panel -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #2C2C2C; -fx-padding: 15; -fx-background-radius: 10;">
+                <Label text="📝 Câu hỏi" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                
+                <ScrollPane fx:id="questionsScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: #1E1E1E; -fx-background-radius: 5;">
+                    <VBox fx:id="questionsContainer" spacing="15" style="-fx-padding: 10;"/>
+                </ScrollPane>
+
+                <!-- Bottom: Submit Button -->
+                <HBox alignment="CENTER_RIGHT" spacing="10" style="-fx-padding: 10;">
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="submitButton" text="📤 Nộp bài" onAction="#handleSubmitExam"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;
+                                   -fx-pref-width: 150; -fx-pref-height: 45; -fx-background-radius: 5;
+                                   -fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <Button fx:id="leaveButton" text="📞 Rời phòng thi" onAction="#handleLeave"
+                            style="-fx-background-color: #E53935; -fx-text-fill: white;
+                                   -fx-pref-width: 150; -fx-pref-height: 45; -fx-background-radius: 5;
+                                   -fx-font-size: 14;"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+
+</BorderPane>
+

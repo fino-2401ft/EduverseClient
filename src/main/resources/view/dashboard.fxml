@@ -42,7 +42,7 @@
             <Button text="📹 Meeting" onAction="#showMeetings"
                     style="-fx-pref-width: 180; -fx-alignment: CENTER_LEFT;"/>
 
-            <Button text="💬 Chat" onAction="#showChat"
+            <Button text="💬 Messenger" onAction="#showMessenger"
                     style="-fx-pref-width: 180; -fx-alignment: CENTER_LEFT;"/>
 
             <Button text="📝 Bài thi" onAction="#showExams"

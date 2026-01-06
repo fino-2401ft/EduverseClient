@@ -1,12 +1,12 @@
 package common.model;
 
 
-import common.enums.ConversationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,19 +16,16 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Conversation implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
-    
+
     private String conversationId;
-    private String conversationName;
-    private ConversationType conversationType;
-    private String relatedId;  // courseId, meetingId, or "userId1_userId2"
-    
+    private String type; //private, courseChat
+
     @Builder.Default
-    private List<String> memberIds = new ArrayList<>();
-    
-    private String lastMessageText;
-    private long lastMessageTime;
-    
-    @Builder.Default
-    private long createdAt = System.currentTimeMillis();
+    private List<String> participants = new ArrayList<>();
+
+    private String lastMessageId;
+    private long lastUpdate;
+
 }

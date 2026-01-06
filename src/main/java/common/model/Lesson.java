@@ -33,10 +33,13 @@ public class Lesson implements Serializable {
     
     @Builder.Default
     private long createdAt = System.currentTimeMillis();
-    
+
+
     @Builder.Default
-    private boolean isPublished = false;
-    
+    private boolean published = false;  // Đổi từ isPublished -> published
+
     @Builder.Default
-    private boolean isFree = false;  // Bài học miễn phí (preview)
+    private boolean free = false;  // Đổi từ isFree -> free
+
+
 }

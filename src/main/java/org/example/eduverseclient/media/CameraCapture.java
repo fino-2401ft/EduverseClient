@@ -172,7 +172,8 @@ public class CameraCapture {
         if (webcam != null && webcam.isOpen()) {
             webcam.close();
         }
-
+// Quan trọng: Đợi 1 chút để phần cứng nhả tài nguyên
+        try { Thread.sleep(200); } catch (InterruptedException e) {}
         log.info("🛑 Camera stopped");
     }
 

@@ -10,19 +10,17 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.control.OverrunStyle;
-import javafx.scene.Scene;
-import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
+import javafx.stage.*;
 import lombok.extern.slf4j.Slf4j;
 import org.example.eduverseclient.RMIClient;
 import org.example.eduverseclient.service.MessengerServiceHelper;
@@ -429,7 +427,7 @@ public class MessengerController {
             avatarContainer.setPrefSize(40, 40);
             
             // Default avatar (circle with initial)
-            javafx.scene.shape.Circle defaultAvatar = new javafx.scene.shape.Circle(20, Color.LIGHTGRAY);
+            Circle defaultAvatar = new Circle(20, Color.LIGHTGRAY);
             Label initialLabel = new Label("?");
             initialLabel.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #666;");
             avatarContainer.getChildren().addAll(defaultAvatar, initialLabel);
@@ -446,16 +444,16 @@ public class MessengerController {
                         
                         if (sender != null && sender.getAvatarUrl() != null && !sender.getAvatarUrl().isEmpty()) {
                             try {
-                                javafx.scene.image.ImageView avatarView = new javafx.scene.image.ImageView();
+                                ImageView avatarView = new ImageView();
                                 avatarView.setFitWidth(40);
                                 avatarView.setFitHeight(40);
                                 avatarView.setPreserveRatio(true);
                                 avatarView.setSmooth(true);
-                                javafx.scene.image.Image avatarImage = new javafx.scene.image.Image(sender.getAvatarUrl(), true);
+                                Image avatarImage = new Image(sender.getAvatarUrl(), true);
                                 avatarView.setImage(avatarImage);
                                 
                                 // Clip to circle
-                                javafx.scene.shape.Circle clip = new javafx.scene.shape.Circle(20, 20, 20);
+                                Circle clip = new Circle(20, 20, 20);
                                 avatarView.setClip(clip);
                                 
                                 avatarContainer.getChildren().clear();
@@ -493,8 +491,8 @@ public class MessengerController {
         } else if (message.getType() == MessageType.IMAGE && message.getContent() != null && message.getContent().startsWith("http")) {
             // Display image from URL (Cloudinary)
             try {
-                javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
-                javafx.scene.image.Image image = new javafx.scene.image.Image(message.getContent(), true);
+                ImageView imageView = new ImageView();
+                Image image = new Image(message.getContent(), true);
                 imageView.setImage(image);
                 imageView.setFitWidth(300);
                 imageView.setFitHeight(300);

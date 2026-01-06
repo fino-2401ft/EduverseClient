@@ -58,92 +58,75 @@ public class CourseDetailController {
     public void initialize() {
         courseService = CourseService.getInstance();
         currentUserId = RMIClient.getInstance().getCurrentUser() != null
-            ? RMIClient.getInstance().getCurrentUser().getUserId()
-            : null;
+                ? RMIClient.getInstance().getCurrentUser().getUserId()
+                : null;
 
-        // Initialize with placeholder data
         setupPlaceholders();
+
+        // Set default thumbnail size
+        if (thumbnailImageView != null) {
+            thumbnailImageView.setFitWidth(340);
+            thumbnailImageView.setFitHeight(190);
+        }
     }
 
-    /**
-     * Load course detail page with courseId
-     */
+
     public void loadCourse(String courseId) {
+        log.info("🔍 Loading course: {}", courseId);
+
         Platform.runLater(() -> {
             try {
-                // Load course data
                 CompletableFuture.supplyAsync(() -> {
                     return courseService.getCourseById(courseId);
                 }).thenAccept(loadedCourse -> {
                     Platform.runLater(() -> {
                         if (loadedCourse != null) {
+                            log.info("✅ Course loaded: {}", loadedCourse.getTitle());
                             this.course = loadedCourse;
                             this.isEnrolled = currentUserId != null && course.hasStudent(currentUserId);
                             loadCourseDetails();
                             loadLessons();
                         } else {
-                            log.error("Course not found: {}", courseId);
+                            log.error("❌ Course not found: {}", courseId);
                             showError("Khóa học không tồn tại!");
                         }
                     });
                 }).exceptionally(throwable -> {
-                    log.error("Failed to load course", throwable);
+                    log.error("❌ Failed to load course", throwable);
                     Platform.runLater(() -> showError("Không thể tải thông tin khóa học!"));
                     return null;
                 });
             } catch (Exception e) {
-                log.error("Failed to load course", e);
+                log.error("❌ Exception loading course", e);
                 showError("Không thể tải thông tin khóa học!");
             }
         });
     }
 
-    /**
-     * Load course details and display
-     */
     private void loadCourseDetails() {
         if (course == null) return;
 
-        // Title
         courseTitleLabel.setText(course.getTitle());
-
-        // Subtitle (use description as subtitle)
         courseSubtitleLabel.setText(course.getDescription());
 
-        // Rating (mock data for now)
         ratingLabel.setText("4.7");
         ratingCountLabel.setText("(930 ratings)");
 
-        // Student count
         int studentCount = course.getStudentCount();
         studentCountLabel.setText(studentCount + " students");
 
-        // Instructor
         if (course.getTeacherName() != null) {
             instructorLink.setText(course.getTeacherName());
         } else {
             instructorLink.setText("Unknown Teacher");
         }
 
-        // Last updated
         SimpleDateFormat sdf = new SimpleDateFormat("MM/yyyy");
         lastUpdatedLabel.setText("Last updated " + sdf.format(new Date(course.getUpdatedAt())));
-
-        // Language
         languageLabel.setText(DEFAULT_LANGUAGE);
 
-        // Thumbnail
-        if (course.getThumbnailUrl() != null && !course.getThumbnailUrl().isEmpty()) {
-            try {
-                Image image = new Image(course.getThumbnailUrl(), true);
-                thumbnailImageView.setImage(image);
-            } catch (Exception e) {
-                log.warn("Failed to load thumbnail: {}", course.getThumbnailUrl());
-                setPlaceholderThumbnail();
-            }
-        } else {
-            setPlaceholderThumbnail();
-        }
+        // FIX: Load thumbnail with better error handling
+        loadThumbnail();
 
         // Enrollment buttons
         if (isEnrolled) {
@@ -158,67 +141,109 @@ public class CourseDetailController {
             continueButton.setManaged(false);
         }
 
-        // Breadcrumb
         setupBreadcrumb();
-
-        // Learning objectives (extract from description or use defaults)
         setupLearningObjectives();
-
-        // Requirements (default for now)
         setupRequirements();
-
-        // Course includes
         setupCourseIncludes();
     }
 
-    /**
-     * Load lessons for the course
-     */
+
+    // FIX: Separate thumbnail loading method
+    private void loadThumbnail() {
+        if (course.getThumbnailUrl() != null && !course.getThumbnailUrl().isEmpty()) {
+            log.info("📷 Loading thumbnail from: {}", course.getThumbnailUrl());
+            try {
+                Image image = new Image(course.getThumbnailUrl(), true);
+
+                // Check if image loaded successfully
+                image.errorProperty().addListener((obs, oldError, newError) -> {
+                    if (newError) {
+                        log.warn("❌ Failed to load thumbnail: {}", course.getThumbnailUrl());
+                        Platform.runLater(this::setPlaceholderThumbnail);
+                    }
+                });
+
+                image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                    if (newProgress.doubleValue() >= 1.0) {
+                        log.info("✅ Thumbnail loaded successfully");
+                        Platform.runLater(() -> thumbnailImageView.setImage(image));
+                    }
+                });
+
+                // Set image immediately (will show when loaded)
+                thumbnailImageView.setImage(image);
+
+            } catch (Exception e) {
+                log.error("❌ Exception loading thumbnail", e);
+                setPlaceholderThumbnail();
+            }
+        } else {
+            log.warn("⚠️ No thumbnail URL provided");
+            setPlaceholderThumbnail();
+        }
+    }
+
+    // FIX: Load lessons with detailed logging
     private void loadLessons() {
-        if (course == null) return;
+        if (course == null) {
+            log.error("❌ Cannot load lessons: course is null");
+            return;
+        }
+
+        log.info("📚 Loading lessons for course: {}", course.getCourseId());
 
         CompletableFuture.supplyAsync(() -> {
-            return courseService.getLessonsByCourse(course.getCourseId());
+            List<Lesson> loadedLessons = courseService.getLessonsByCourse(course.getCourseId());
+            log.info("📚 Found {} lessons", loadedLessons != null ? loadedLessons.size() : 0);
+            return loadedLessons;
         }).thenAccept(loadedLessons -> {
             Platform.runLater(() -> {
                 this.lessons = loadedLessons != null ? loadedLessons : new ArrayList<>();
+
+                if (this.lessons.isEmpty()) {
+                    log.warn("⚠️ No lessons found for course: {}", course.getCourseId());
+                } else {
+                    log.info("✅ Successfully loaded {} lessons", this.lessons.size());
+                    for (Lesson lesson : this.lessons) {
+                        log.debug("  - Lesson: {} ({}s)", lesson.getTitle(), lesson.getVideoDuration());
+                    }
+                }
+
                 displayLessons();
                 updateContentSummary();
             });
         }).exceptionally(throwable -> {
-            log.error("Failed to load lessons", throwable);
+            log.error("❌ Failed to load lessons", throwable);
             Platform.runLater(() -> {
                 this.lessons = new ArrayList<>();
                 displayLessons();
+                updateContentSummary();
             });
             return null;
         });
     }
 
-    /**
-     * Display lessons grouped by sections (for now, show all as one section)
-     */
     private void displayLessons() {
         lessonsContainer.getChildren().clear();
 
-        if (lessons.isEmpty()) {
+        if (lessons == null || lessons.isEmpty()) {
+            log.warn("⚠️ Displaying empty lessons container");
             Label noLessonsLabel = new Label("No lessons available yet.");
-            noLessonsLabel.setStyle("-fx-text-fill: #6a6f73; -fx-font-size: 14px;");
+            noLessonsLabel.setStyle("-fx-text-fill: #6a6f73; -fx-font-size: 14px; -fx-padding: 20px;");
             lessonsContainer.getChildren().add(noLessonsLabel);
             return;
         }
 
-        // Group lessons (for now, all in one section)
+        log.info("🎨 Displaying {} lessons", lessons.size());
         String sectionId = "section_0";
         boolean isExpanded = expandedSections.getOrDefault(sectionId, true);
 
         VBox sectionContainer = createLessonSection("Course Content", lessons, sectionId, isExpanded);
         lessonsContainer.getChildren().add(sectionContainer);
+
+        log.info("✅ Lessons displayed successfully");
     }
 
-    /**
-     * Create a collapsible lesson section
-     */
     private VBox createLessonSection(String sectionTitle, List<Lesson> sectionLessons, String sectionId, boolean expanded) {
         VBox section = new VBox();
         section.getStyleClass().add("lesson-section");
@@ -238,7 +263,7 @@ public class CourseDetailController {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Label expandIcon = new Label(expanded ? "▼" : "▶");
-        expandIcon.getStyleClass().add("lesson-section-count");
+        expandIcon.getStyleClass().add("lesson-section-icon");
 
         header.getChildren().addAll(titleLabel, countLabel, spacer, expandIcon);
 
@@ -251,29 +276,29 @@ public class CourseDetailController {
                 Node lessonItem = createLessonItem(lesson);
                 lessonList.getChildren().add(lessonItem);
             }
+            lessonList.setVisible(true);
+            lessonList.setManaged(true);
+        } else {
+            lessonList.setVisible(false);
+            lessonList.setManaged(false);
         }
 
-        // Toggle expand/collapse
         header.setOnMouseClicked(e -> {
             boolean newExpanded = !expandedSections.getOrDefault(sectionId, true);
             expandedSections.put(sectionId, newExpanded);
-            displayLessons(); // Refresh
+            displayLessons();
         });
 
         section.getChildren().addAll(header, lessonList);
-
         return section;
     }
 
-    /**
-     * Create a lesson item
-     */
     private Node createLessonItem(Lesson lesson) {
         HBox item = new HBox(10);
         item.getStyleClass().add("lesson-item");
         item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        item.setPadding(new javafx.geometry.Insets(12, 15, 12, 15));
 
-        // Check if lesson is accessible (enrolled or free)
         boolean isAccessible = isEnrolled || lesson.isFree();
         if (!isAccessible) {
             item.getStyleClass().add("locked");
@@ -302,17 +327,13 @@ public class CourseDetailController {
         item.getChildren().addAll(titleLabel, spacer, rightBox);
 
         if (isAccessible) {
-            item.setOnMouseClicked(e -> {
-                openLesson(lesson);
-            });
+            item.setOnMouseClicked(e -> openLesson(lesson));
+            item.setStyle(item.getStyle() + "; -fx-cursor: hand;");
         }
 
         return item;
     }
 
-    /**
-     * Format duration in seconds to MM:SS or HH:MM:SS
-     */
     private String formatDuration(int seconds) {
         int hours = seconds / 3600;
         int minutes = (seconds % 3600) / 60;
@@ -325,9 +346,6 @@ public class CourseDetailController {
         }
     }
 
-    /**
-     * Update content summary
-     */
     private void updateContentSummary() {
         if (lessons == null || lessons.isEmpty()) {
             contentSummaryLabel.setText("0 sections • 0 lectures • 0h 0m total length");
@@ -339,9 +357,6 @@ public class CourseDetailController {
         contentSummaryLabel.setText("1 section • " + lessons.size() + " lectures • " + durationStr + " total length");
     }
 
-    /**
-     * Format total duration
-     */
     private String formatTotalDuration(int totalSeconds) {
         int hours = totalSeconds / 3600;
         int minutes = (totalSeconds % 3600) / 60;
@@ -353,37 +368,30 @@ public class CourseDetailController {
         }
     }
 
-    /**
-     * Setup breadcrumb
-     */
     private void setupBreadcrumb() {
         breadcrumbContainer.getChildren().clear();
 
         Label itLabel = new Label("IT & Software");
-        itLabel.setOnMouseClicked(e -> {}); // TODO: Navigate
+        itLabel.setOnMouseClicked(e -> {});
 
         Label separator1 = new Label(">");
         separator1.getStyleClass().add("separator");
 
         Label pythonLabel = new Label("Python");
-        pythonLabel.setOnMouseClicked(e -> {}); // TODO: Navigate
+        pythonLabel.setOnMouseClicked(e -> {});
 
         breadcrumbContainer.getChildren().addAll(itLabel, separator1, pythonLabel);
     }
 
-    /**
-     * Setup learning objectives
-     */
     private void setupLearningObjectives() {
         learningObjectivesContainer.getChildren().clear();
 
-        // Default learning objectives (can be extracted from course description or stored in DB)
         List<String> objectives = Arrays.asList(
-            "Master Python programming from basics to advanced",
-            "Build real-world applications and projects",
-            "Understand object-oriented programming concepts",
-            "Work with databases and data manipulation",
-            "Create web applications using Python frameworks"
+                "Master Python programming from basics to advanced",
+                "Build real-world applications and projects",
+                "Understand object-oriented programming concepts",
+                "Work with databases and data manipulation",
+                "Create web applications using Python frameworks"
         );
 
         for (String objective : objectives) {
@@ -400,16 +408,13 @@ public class CourseDetailController {
         }
     }
 
-    /**
-     * Setup requirements
-     */
     private void setupRequirements() {
         requirementsContainer.getChildren().clear();
 
         List<String> requirements = Arrays.asList(
-            "No programming experience needed",
-            "Computer with internet connection",
-            "Willingness to learn and practice"
+                "No programming experience needed",
+                "Computer with internet connection",
+                "Willingness to learn and practice"
         );
 
         for (String req : requirements) {
@@ -426,9 +431,6 @@ public class CourseDetailController {
         }
     }
 
-    /**
-     * Setup course includes
-     */
     private void setupCourseIncludes() {
         courseIncludesContainer.getChildren().clear();
 
@@ -436,10 +438,10 @@ public class CourseDetailController {
         String videoHours = formatTotalDuration(totalDuration);
 
         List<String> includes = Arrays.asList(
-            videoHours + " on-demand video",
-            "Multiple downloadable resources",
-            "Access on mobile and TV",
-            "Certificate of completion"
+                videoHours + " on-demand video",
+                "Multiple downloadable resources",
+                "Access on mobile and TV",
+                "Certificate of completion"
         );
 
         for (String include : includes) {
@@ -456,25 +458,23 @@ public class CourseDetailController {
         }
     }
 
-    /**
-     * Setup placeholders
-     */
     private void setupPlaceholders() {
         courseTitleLabel.setText("Loading...");
         setPlaceholderThumbnail();
     }
 
-    /**
-     * Set placeholder thumbnail
-     */
     private void setPlaceholderThumbnail() {
         thumbnailImageView.setImage(null);
-        thumbnailImageView.setStyle("-fx-background-color: #d1d7dc;");
+        // Set a light gray background with text
+        StackPane placeholder = new StackPane();
+        placeholder.setStyle("-fx-background-color: #e8e8e8; -fx-background-radius: 4px;");
+        placeholder.setPrefSize(340, 190);
+
+        Label placeholderText = new Label("Course Preview");
+        placeholderText.setStyle("-fx-text-fill: #999; -fx-font-size: 14px;");
+        placeholder.getChildren().add(placeholderText);
     }
 
-    /**
-     * Handle enroll button click
-     */
     @FXML
     private void handleEnroll() {
         if (course == null || currentUserId == null) {
@@ -500,9 +500,7 @@ public class CourseDetailController {
                             continueButton.setVisible(true);
                             continueButton.setManaged(true);
 
-                            // Refresh lesson display to show all lessons
                             displayLessons();
-
                             showInfo("Đã tham gia khóa học thành công!");
                         } else {
                             showError("Không thể tham gia khóa học. Vui lòng thử lại!");
@@ -513,9 +511,6 @@ public class CourseDetailController {
         });
     }
 
-    /**
-     * Handle continue button click
-     */
     @FXML
     private void handleContinue() {
         if (lessons == null || lessons.isEmpty()) {
@@ -523,28 +518,12 @@ public class CourseDetailController {
             return;
         }
 
-        // Open first lesson or last viewed lesson
         Lesson firstLesson = lessons.get(0);
         openLesson(firstLesson);
     }
 
-    /**
-     * Open lesson learning page
-     */
-    private void openLesson(Lesson lesson) {
-        if (!isEnrolled && !lesson.isFree()) {
-            showError("Vui lòng tham gia khóa học để xem bài học này!");
-            return;
-        }
 
-        log.info("Opening lesson: {}", lesson.getTitle());
-        // TODO: Navigate to lesson learning page
-        showInfo("Tính năng học bài sẽ được triển khai sớm!");
-    }
 
-    /**
-     * Handle expand all link
-     */
     @FXML
     private void handleExpandAll() {
         boolean allExpanded = expandedSections.values().stream().allMatch(b -> b);
@@ -558,9 +537,6 @@ public class CourseDetailController {
         displayLessons();
     }
 
-    /**
-     * Show error message
-     */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
@@ -569,9 +545,6 @@ public class CourseDetailController {
         alert.showAndWait();
     }
 
-    /**
-     * Show info message
-     */
     private void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Information");
@@ -579,5 +552,36 @@ public class CourseDetailController {
         alert.setContentText(message);
         alert.showAndWait();
     }
-}
 
+    private void openLesson(Lesson lesson) {
+        if (!isEnrolled && !lesson.isFree()) {
+            showError("Vui lòng tham gia khóa học để xem bài học này!");
+            return;
+        }
+
+        log.info("📖 Opening lesson: {}", lesson.getTitle());
+
+        try {
+            // Navigate to lesson learning page
+            javafx.scene.layout.StackPane contentPane =
+                    (javafx.scene.layout.StackPane) mainContainer.getScene().lookup("#contentPane");
+
+            if (contentPane != null) {
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource("/view/lesson-learning.fxml")
+                );
+                Node lessonView = loader.load();
+                LessonLearningController controller = loader.getController();
+                controller.loadLesson(course.getCourseId(), lesson.getLessonId());
+
+                contentPane.getChildren().clear();
+                contentPane.getChildren().add(lessonView);
+
+                log.info("✅ Navigated to lesson learning");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to open lesson", e);
+            showError("Không thể mở bài học!");
+        }
+    }
+}

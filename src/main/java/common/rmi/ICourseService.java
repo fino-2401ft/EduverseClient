@@ -91,4 +91,6 @@ public interface ICourseService extends Remote {
      */
     List<common.model.exam.ExamResult> getExamResultsByStudent(String studentId)
             throws RemoteException;
+
+    boolean completeLessonInEnrollment(String enrollmentId, String lessonId, int totalLessons) throws RemoteException;
 }

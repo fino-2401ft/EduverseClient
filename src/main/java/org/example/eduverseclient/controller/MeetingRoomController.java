@@ -83,6 +83,15 @@ public class MeetingRoomController {
         this.myEnrollment = enrollment;
         this.joinTime = System.currentTimeMillis();
 
+        //  BƯỚC 1: TẠM DỪNG MESSENGER TRƯỚC KHI KHỞI TẠO MEDIA
+        // Để tránh tranh chấp packet với MediaStreamManager
+        try {
+            org.example.eduverseclient.service.P2PMessengerService.getInstance().pauseReceiver();
+            log.info("⏸️ P2P Messenger paused for meeting.");
+        } catch (Exception e) {
+            log.warn("Failed to pause messenger: " + e.getMessage());
+        }
+
         // 1. Cập nhật UI cơ bản
         meetingTitleLabel.setText(meeting.getTitle());
         setupButtonsByRole();
@@ -95,6 +104,7 @@ public class MeetingRoomController {
         startAutoUpdate();
 
         // 4. Khởi động Media (Video/Audio/Chat)
+        // MediaStreamManager sẽ tái sử dụng socket của Messenger
         initMediaStreaming();
 
         log.info("✅ Meeting room initialized - Role: {}", myEnrollment.getRole());
@@ -163,8 +173,10 @@ public class MeetingRoomController {
     @FXML
     private void handleSendMessage() {
         String message = chatInputField.getText().trim();
-        if (message.isEmpty()) return;
-
+        if (message.isEmpty()) {
+            return;
+        }
+        
         // ✨ FIX CRASH: Kiểm tra null trước khi gửi
         if (mediaStreamManager == null) {
             showError("Chưa kết nối được với phòng họp. Vui lòng đợi...");
@@ -172,12 +184,16 @@ public class MeetingRoomController {
         }
 
         // Gửi tin nhắn qua UDP
-        mediaStreamManager.sendChatMessage(message);
-
-        // Hiển thị tin nhắn của chính mình
-        displayChatMessage(myEnrollment.getUserId(), message);
-
-        chatInputField.clear();
+        try {
+            mediaStreamManager.sendChatMessage(message);
+            
+            // Hiển thị tin nhắn của chính mình
+            displayChatMessage(myEnrollment.getUserId(), message);
+            chatInputField.clear();
+        } catch (Exception e) {
+            log.error("❌ Failed to send chat message", e);
+            showError("Không thể gửi tin nhắn. Vui lòng thử lại.");
+        }
     }
 
     @FXML
@@ -412,10 +428,10 @@ public class MeetingRoomController {
         try {
             // 1. Stop auto-update executor
             if (updateExecutor != null) {
-                updateExecutor.shutdownNow(); // Dùng shutdownNow để ngắt ngay lập tức
+                updateExecutor.shutdownNow();
             }
 
-            // 2. Stop media stream
+            // 2. Stop media stream (Quan trọng: MediaStreamManager sẽ dừng việc lắng nghe trên socket)
             if (mediaStreamManager != null) {
                 mediaStreamManager.stop();
             }
@@ -424,6 +440,19 @@ public class MeetingRoomController {
             if (videoPanels != null) {
                 videoPanels.clear();
             }
+
+            // 4. ▶️ KHÔI PHỤC MESSENGER (RESUME)
+            // Chạy trong Thread riêng hoặc Platform.runLater để tránh block UI
+            // Delay nhẹ 200ms để đảm bảo MediaStreamManager đã nhả hoàn toàn quyền lắng nghe
+            new Thread(() -> {
+                try {
+                    Thread.sleep(200);
+                    log.info("🔄 Resuming P2P Messenger service...");
+                    org.example.eduverseclient.service.P2PMessengerService.getInstance().resumeReceiver();
+                } catch (Exception e) {
+                    log.error("Failed to resume messenger", e);
+                }
+            }).start();
 
             log.info("✅ Cleanup completed");
         } catch (Exception e) {

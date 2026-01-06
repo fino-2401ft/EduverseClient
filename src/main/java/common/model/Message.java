@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
@@ -14,20 +15,19 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 public class Message implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
-    
+
     private String messageId;
     private String conversationId;
     private String senderId;
-    private String senderName;
-    private String senderAvatar;
-    
+
     private MessageType type;
-    private String textContent;
-    
+    private String content;
+
     @Builder.Default
     private long timestamp = System.currentTimeMillis();
-    
+
     @Builder.Default
-    private boolean isRead = false;
+    private boolean seen = false;
 }

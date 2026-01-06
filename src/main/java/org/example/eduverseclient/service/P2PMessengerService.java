@@ -10,11 +10,13 @@ import org.example.eduverseclient.RMIClient;
 import org.example.eduverseclient.network.udp.UDPChatReceiver;
 import org.example.eduverseclient.network.udp.UDPChatSender;
 import org.example.eduverseclient.utils.MediaProcessor;
-import org.example.eduverseclient.service.MessengerServiceHelper;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -113,6 +115,20 @@ public class P2PMessengerService {
     }
     
     /**
+     * Get chat socket for reuse by MediaStreamManager
+     */
+    public java.net.DatagramSocket getChatSocket() {
+        return chatSocket;
+    }
+    
+    /**
+     * Check if messenger service is initialized
+     */
+    public boolean isInitialized() {
+        return isInitialized && chatSocket != null && !chatSocket.isClosed();
+    }
+    
+    /**
      * Set callback cho new messages
      */
     public void setMessageCallback(BiConsumer<Message, Conversation> callback) {
@@ -155,7 +171,58 @@ public class P2PMessengerService {
             log.error("Send message failed", e);
         }
     }
-    
+
+    public void pauseReceiver() {
+        if (chatReceiver != null) {
+            chatReceiver.stop(); // Tạm dừng thread receive của Messenger
+        }
+    }
+
+    public void resumeReceiver() {
+        // Trường hợp 1: Socket đã bị đóng hoặc chưa từng khởi tạo -> Init lại từ đầu
+        if (chatSocket == null || chatSocket.isClosed()) {
+            log.warn("⚠️ Chat socket is closed/null. Re-initializing full service...");
+            isInitialized = false;
+            initialize();
+            return;
+        }
+
+        // Trường hợp 2: Socket vẫn sống (vừa rời họp xong)
+        log.info("▶️ Resuming P2P Messenger Receiver on existing socket...");
+
+        // Đảm bảo receiver cũ đã dừng hẳn
+        if (chatReceiver != null) {
+            chatReceiver.stop();
+        }
+
+        // Khởi tạo Receiver mới gắn vào Socket cũ
+        chatReceiver = new UDPChatReceiver(chatSocket);
+
+        // Gắn lại các Callback (Logic y hệt như trong hàm initialize)
+        chatReceiver.start(
+                this::handleTextMessage,
+                new UDPChatReceiver.FileTransferCallback() {
+                    @Override
+                    public void onFileStart(String senderId, String conversationId, String fileName, int fileSize, int totalChunks) {
+                        // File transfer started logic
+                    }
+
+                    @Override
+                    public void onFileChunk(String senderId, String conversationId, int chunkIndex, int totalChunks) {
+                        // Chunk received logic
+                    }
+
+                    @Override
+                    public void onFileComplete(String senderId, String conversationId, String fileName, byte[] fileData) {
+                        handleFileTransfer(senderId, conversationId, fileName, fileData);
+                    }
+                }
+        );
+
+        // Đồng bộ lại tin nhắn từ Firebase để bù đắp cho khoảng thời gian bị Pause
+        // fetchMissedMessages(); // (Optional: Nên làm thêm hàm này sau)
+    }
+
     /**
      * Gửi file/image/video
      */

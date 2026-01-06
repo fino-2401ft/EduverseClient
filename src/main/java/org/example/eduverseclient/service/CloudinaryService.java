@@ -1,12 +1,13 @@
 package org.example.eduverseclient.service;
 
+
 import com.cloudinary.Cloudinary;
+import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import common.constant.FirebaseConfig;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import com.cloudinary.Transformation;
-import java.io.ByteArrayInputStream;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

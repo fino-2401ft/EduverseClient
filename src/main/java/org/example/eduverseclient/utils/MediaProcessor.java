@@ -1,7 +1,5 @@
 package org.example.eduverseclient.utils;
 
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;

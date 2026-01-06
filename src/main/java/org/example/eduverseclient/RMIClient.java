@@ -1,10 +1,12 @@
 package org.example.eduverseclient;
 
+import common.constant.RMIConfig;
 import common.model.Peer;
 import common.model.User;
 import common.rmi.IAuthService;
 import common.rmi.IChatService;
 import common.rmi.ICourseService;
+import common.rmi.IExamService;
 import common.rmi.IMeetingService;
 import common.rmi.IPeerService;
 import lombok.Getter;
@@ -33,9 +35,14 @@ public class RMIClient {
 
 //    @Getter
 //    private IChatService chatService;
+    @Getter
+    private IChatService chatService;
 
     @Getter
     private IPeerService peerService;
+
+    @Getter
+    private IExamService examService;
 
     @Getter
     private User currentUser;
@@ -49,7 +56,7 @@ public class RMIClient {
     private ScheduledExecutorService heartbeatExecutor;
 
     // RMI Server config
-    private static final String RMI_HOST = "192.168.100.62"; // TODO: Load from config
+    private static final String RMI_HOST = "192.168.100.54"; // TODO: Load from config
     private static final int RMI_PORT = 1099;
 
     private RMIClient() {
@@ -73,11 +80,12 @@ public class RMIClient {
             Registry registry = LocateRegistry.getRegistry(RMI_HOST, RMI_PORT);
 
             // Lookup services
-            authService = (IAuthService) registry.lookup("AuthService");
-            meetingService = (IMeetingService) registry.lookup("MeetingService");
-            courseService = (ICourseService) registry.lookup("CourseService");
-          //  chatService = (IChatService) registry.lookup("ChatService");
-            peerService = (IPeerService) registry.lookup("PeerService");
+            authService = (IAuthService) registry.lookup(RMIConfig.AUTH_SERVICE);
+            meetingService = (IMeetingService) registry.lookup(RMIConfig.MEETING_SERVICE);
+            courseService = (ICourseService) registry.lookup(RMIConfig.COURSE_SERVICE);
+            chatService = (IChatService) registry.lookup(RMIConfig.CHAT_SERVICE);
+            peerService = (IPeerService) registry.lookup(RMIConfig.PEER_SERVICE);
+            examService = (IExamService) registry.lookup(RMIConfig.EXAM_SERVICE);
 
             log.info("✅ Connected to RMI Server");
             return true;
@@ -234,7 +242,7 @@ public class RMIClient {
      * Check if connected
      */
     public boolean isConnected() {
-        return authService != null && meetingService != null && courseService != null;
+        return authService != null && meetingService != null && courseService != null && examService != null;
     }
 
     /**
@@ -286,6 +294,7 @@ public class RMIClient {
             courseService = null;
           //  chatService = null;
             peerService = null;
+            examService = null;
 
             log.info("✅ RMI Client shutdown complete");
 

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.ExamListController"
+      spacing="15"
+      style="-fx-background-color: white;">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="📝 Danh sách Bài thi" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Label text="Khóa học:" style="-fx-font-size: 14;"/>
+        <ComboBox fx:id="courseComboBox" prefWidth="200" promptText="Chọn khóa học"/>
+
+        <Button text="➕ Tạo Bài thi" onAction="#handleCreateExam"
+                style="-fx-background-color: #1976D2; -fx-text-fill: white;
+                       -fx-font-size: 14; -fx-pref-height: 35; -fx-background-radius: 5;"/>
+
+        <Button text="🔄 Refresh" onAction="#handleRefresh"
+                style="-fx-background-color: #43A047; -fx-text-fill: white;
+                       -fx-font-size: 14; -fx-pref-height: 35; -fx-background-radius: 5;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Exam List -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent;">
+        <VBox fx:id="examListBox" spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+        </VBox>
+    </ScrollPane>
+
+</VBox>
+

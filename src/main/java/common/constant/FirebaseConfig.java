@@ -21,11 +21,12 @@ public class FirebaseConfig {
     // Firebase Storage Paths
     public static final String AVATARS_PATH = "avatars/";
     public static final String COURSE_MATERIALS_PATH = "course_materials/";
-    
+
     // Cloudinary Configuration (for file upload)
-    public static final String CLOUDINARY_CLOUD_NAME = "your_cloud_name";
-    public static final String CLOUDINARY_API_KEY = "your_api_key";
-    public static final String CLOUDINARY_API_SECRET = "your_api_secret";
+    public static final String CLOUDINARY_CLOUD_NAME = "dlkmlhk4k";
+    public static final String CLOUDINARY_API_KEY = "342625823423983";
+    public static final String CLOUDINARY_API_SECRET = "eQL67nyxdWKsZGfg95wKg4j-bkY";
+
 
 
 

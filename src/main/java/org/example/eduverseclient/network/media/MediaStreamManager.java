@@ -16,7 +16,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +54,12 @@ public class MediaStreamManager {
     private long lastPeerUpdateTime = 0;
     private static final long PEER_UPDATE_INTERVAL = 2000; // Update every 2 seconds
     private ScheduledExecutorService peerUpdateExecutor;
+    
+    // Circuit breaker for updatePeerList
+    private int consecutiveFailures = 0;
+    private static final int MAX_FAILURES = 3;
+    private static final long CIRCUIT_BREAKER_TIMEOUT = 10000; // 10 seconds
+    private long lastFailureTime = 0;
 
     // Callbacks
     private UDPChatSender chatSender;
@@ -79,7 +84,26 @@ public class MediaStreamManager {
             // 1. INITIALIZE SHARED SOCKETS
             this.videoSocket = new DatagramSocket(myPeer.getVideoPort());
             this.audioSocket = new DatagramSocket(myPeer.getAudioPort());
-            this.chatSocket = new DatagramSocket(myPeer.getChatPort());
+            
+            // Try to reuse chat socket from P2PMessengerService to avoid port conflict
+            java.net.DatagramSocket existingChatSocket = null;
+            try {
+                org.example.eduverseclient.service.P2PMessengerService messengerService = 
+                    org.example.eduverseclient.service.P2PMessengerService.getInstance();
+                if (messengerService.isInitialized()) {
+                    existingChatSocket = messengerService.getChatSocket();
+                }
+            } catch (Exception e) {
+                log.debug("P2PMessengerService not available, creating new chat socket");
+            }
+            
+            if (existingChatSocket != null && !existingChatSocket.isClosed()) {
+                this.chatSocket = existingChatSocket;
+                log.info("✅ Reusing chat socket from P2PMessengerService");
+            } else {
+                this.chatSocket = new DatagramSocket(myPeer.getChatPort());
+                log.info("✅ Created new chat socket on port {}", myPeer.getChatPort());
+            }
 
             log.info("✅ Sockets bound successfully: Video={}, Audio={}, Chat={}",
                     myPeer.getVideoPort(), myPeer.getAudioPort(), myPeer.getChatPort());
@@ -91,6 +115,12 @@ public class MediaStreamManager {
             peerUpdateExecutor = Executors.newSingleThreadScheduledExecutor();
             peerUpdateExecutor.scheduleAtFixedRate(this::updatePeerList,
                     PEER_UPDATE_INTERVAL, PEER_UPDATE_INTERVAL, TimeUnit.MILLISECONDS);
+            
+            // Force immediate update after short delay to catch late joiners (only runs once)
+            peerUpdateExecutor.schedule(() -> {
+                updatePeerList();
+                log.info("✅ Force peer list update for late joiners");
+            }, 500, TimeUnit.MILLISECONDS);
 
             // ============ VIDEO ============
             // Use Singleton Camera
@@ -162,14 +192,15 @@ public class MediaStreamManager {
             chatReceiver = new UDPChatReceiver(chatSocket);
 
             chatReceiver.start(
-                    (senderId, message) -> {
+                    (senderId, conversationId, message) -> {
+                        // For meeting chat, conversationId should be meetingId
                         if (chatMessageCallback != null) chatMessageCallback.accept(senderId, message);
                         if (myEnrollment.getRole() == MeetingRole.HOST) forwardChatToOthers(senderId, message);
                     },
                     new UDPChatReceiver.FileTransferCallback() {
-                        @Override public void onFileStart(String senderId, String fileName, int fileSize, int totalChunks) {}
-                        @Override public void onFileChunk(String senderId, int chunkIndex, int totalChunks) {}
-                        @Override public void onFileComplete(String senderId, String fileName, byte[] fileData) {
+                        @Override public void onFileStart(String senderId, String conversationId, String fileName, int fileSize, int totalChunks) {}
+                        @Override public void onFileChunk(String senderId, String conversationId, int chunkIndex, int totalChunks) {}
+                        @Override public void onFileComplete(String senderId, String conversationId, String fileName, byte[] fileData) {
                             log.info("✅ File received: {}", fileName);
                         }
                     }
@@ -261,9 +292,19 @@ public class MediaStreamManager {
                     log.warn("Error closing audio socket", e);
                 }
             }
+            // Only close chat socket if we created it (not reused from P2PMessengerService)
             if (chatSocket != null && !chatSocket.isClosed()) {
                 try {
-                    chatSocket.close();
+                    // Check if this socket is being used by P2PMessengerService
+                    org.example.eduverseclient.service.P2PMessengerService messengerService = 
+                        org.example.eduverseclient.service.P2PMessengerService.getInstance();
+                    if (messengerService.isInitialized() && messengerService.getChatSocket() == chatSocket) {
+                        // Socket is shared with P2PMessengerService, don't close it
+                        log.info("ℹ️ Chat socket is shared with P2PMessengerService, not closing");
+                    } else {
+                        // We created this socket, safe to close
+                        chatSocket.close();
+                    }
                 } catch (Exception e) {
                     log.warn("Error closing chat socket", e);
                 }
@@ -341,7 +382,12 @@ public class MediaStreamManager {
 
     public void sendChatMessage(String message) {
         if (chatSender == null) {
-            log.warn("Chat sender is not initialized");
+            log.error("❌ Chat sender is not initialized. Cannot send message.");
+            return;
+        }
+        
+        if (chatSocket == null || chatSocket.isClosed()) {
+            log.error("❌ Chat socket is not available. Cannot send message.");
             return;
         }
 
@@ -349,16 +395,20 @@ public class MediaStreamManager {
         if (myEnrollment.getRole() == MeetingRole.HOST) {
             // Case 1: I AM HOST
             // Broadcast directly to other clients using my own ID
-            log.info("Host sending chat broadcast: {}", message);
+            log.debug("Host sending chat broadcast: {}", message);
             forwardChatToOthers(myPeer.getUserId(), message);
 
         } else {
             // Case 2: I AM CLIENT
             // Send to Host, Host will distribute
             if (hostPeer != null) {
-                chatSender.sendMessage(message, hostPeer.getIpAddress(), hostPeer.getChatPort());
+                try {
+                    chatSender.sendMessage(meetingId, message, hostPeer.getIpAddress(), hostPeer.getChatPort());
+                } catch (Exception e) {
+                    log.error("❌ Failed to send chat message to host: {}", e.getMessage());
+                }
             } else {
-                log.warn("Cannot send chat: Host peer is null");
+                log.warn("⚠️ Cannot send chat: Host peer is null");
             }
         }
     }
@@ -366,16 +416,16 @@ public class MediaStreamManager {
     // --- FORWARDING METHODS ---
 
     private void forwardChatToOthers(String senderId, String message) {
-     //   updatePeerList();
+        updatePeerList(); // Ensure fresh peer list before forwarding
 
         forwardData(senderId, (peer) ->
-                // USE forwardMessage TO PRESERVE ORIGINAL SENDER ID
-                chatSender.forwardMessage(senderId, message, peer.getIpAddress(), peer.getChatPort())
+                //  Truyền thêm meetingId vào vị trí conversationId
+                chatSender.forwardMessage(senderId, meetingId, message, peer.getIpAddress(), peer.getChatPort())
         );
     }
 
     private void forwardVideoToOthers(String senderId, Image receivedImage) {
-       // updatePeerList();
+        updatePeerList(); // Ensure fresh peer list before forwarding
         byte[] frameData = convertImageToBytes(receivedImage);
         if (frameData != null) {
             forwardData(senderId, (peer) ->
@@ -384,7 +434,7 @@ public class MediaStreamManager {
     }
 
     private void forwardAudioToOthers(String senderId, byte[] audioData) {
-     //   updatePeerList();
+        updatePeerList(); // Ensure fresh peer list before forwarding
         forwardData(senderId, (peer) ->
                 audioSender.sendAudio(audioData, peer.getIpAddress(), peer.getAudioPort()));
     }
@@ -410,6 +460,20 @@ public class MediaStreamManager {
     // --- UTILITY METHODS ---
 
     private void updatePeerList() {
+        // Circuit breaker: Skip RMI call if too many failures
+        if (consecutiveFailures >= MAX_FAILURES) {
+            long timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime;
+            if (timeSinceLastFailure < CIRCUIT_BREAKER_TIMEOUT) {
+                // Still in circuit breaker timeout, skip RMI call
+                log.debug("⏸️ Circuit breaker active, using cached peer list");
+                return;
+            } else {
+                // Timeout expired, reset and try again
+                consecutiveFailures = 0;
+                log.info("🔄 Circuit breaker reset, retrying peer list update");
+            }
+        }
+        
         try {
             // Cố gắng lấy danh sách mới từ Server
             List<Peer> latestPeers = RMIClient.getInstance().getMeetingService().getAllPeers(meetingId);
@@ -421,15 +485,22 @@ public class MediaStreamManager {
                         .collect(Collectors.toList());
 
                 this.lastPeerUpdateTime = System.currentTimeMillis();
+                consecutiveFailures = 0; // Reset on success
                 log.debug("📋 Updated peer list: {} peers", otherPeers.size());
             }
         } catch (Exception e) {
-            // ✨ QUAN TRỌNG: Server chết thì vào đây
-            // Thay vì Log Error đỏ lòm, ta chỉ Log Warn nhẹ nhàng
-            // VÀ QUAN TRỌNG NHẤT: KHÔNG XÓA this.otherPeers
+            consecutiveFailures++;
+            lastFailureTime = System.currentTimeMillis();
+            
+            if (consecutiveFailures >= MAX_FAILURES) {
+                log.warn("⚠️ Circuit breaker activated after {} failures. Using cached peer list ({} peers).",
+                        MAX_FAILURES, (otherPeers != null ? otherPeers.size() : 0));
+            } else {
+                log.warn("⚠️ Server connection issue ({} failures). Using cached peer list.",
+                        consecutiveFailures);
+            }
+            // ✨ QUAN TRỌNG: KHÔNG XÓA this.otherPeers
             // Hệ thống sẽ tiếp tục dùng danh sách cũ để gửi Video/Chat
-            log.warn("⚠️ Server connection lost. Using cached peer list ({} peers).",
-                    (otherPeers != null ? otherPeers.size() : 0));
         }
     }
 

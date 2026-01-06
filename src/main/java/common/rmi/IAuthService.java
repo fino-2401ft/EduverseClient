@@ -13,14 +13,15 @@ public interface IAuthService extends Remote {
     User register(String email, String password, String fullName, String role) throws RemoteException;
     boolean isEmailExists(String email) throws RemoteException;
     User getUserById(String userId) throws RemoteException;
-    
+
     /**
      * Change password
      */
     boolean changePassword(String userId, String oldPassword, String newPassword) throws RemoteException;
-    
+
     /**
      * Lấy danh sách users theo role
      */
     List<User> getUsersByRole(String role) throws RemoteException;
+    List<User> searchUsers(String query) throws RemoteException;
 }

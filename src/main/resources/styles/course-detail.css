@@ -1,138 +1,374 @@
-.root-scroll {
-    -fx-background-color: #F5F7FA;
-    -fx-fit-to-width: true;
+/* Course Detail Styles */
+.detail-scroll-pane {
+    -fx-background-color: #f8f9fa;
+    -fx-padding: 0;
 }
 
-.main-container {
-    -fx-background-color: #F5F7FA;
+.detail-scroll-pane > .viewport {
+    -fx-background-color: #f8f9fa;
 }
 
-.content-area {
-    -fx-background-color: transparent;
+.course-detail-container {
+    -fx-background-color: #f8f9fa;
+    -fx-padding: 0;
 }
 
-/* Typography */
-.course-title-large {
-    -fx-font-size: 28px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #2D3748;
+/* Left Content */
+.course-content-left {
+    -fx-padding: 40px 60px;
+    -fx-max-width: 900px;
 }
 
-.course-description {
+/* Breadcrumb */
+.breadcrumb {
+    -fx-padding: 0 0 20px 0;
+}
+
+.breadcrumb Label {
+    -fx-text-fill: #0056d2;
     -fx-font-size: 14px;
-    -fx-text-fill: #4A5568;
-    -fx-line-spacing: 4px;
+    -fx-cursor: hand;
 }
 
-.teacher-name {
+.breadcrumb Label:hover {
+    -fx-text-fill: #003d99;
+    -fx-underline: true;
+}
+
+.breadcrumb .separator {
+    -fx-text-fill: #6a6f73;
+    -fx-cursor: default;
+}
+
+/* Course Title */
+.course-detail-title {
+    -fx-font-size: 32px;
     -fx-font-weight: bold;
-    -fx-text-fill: #2B6CB0;
+    -fx-text-fill: #1c1d1f;
+    -fx-wrap-text: true;
+    -fx-padding: 0 0 10px 0;
 }
 
-.meta-label {
-    -fx-text-fill: #718096;
-    -fx-font-size: 13px;
+/* Course Subtitle */
+.course-subtitle {
+    -fx-font-size: 19px;
+    -fx-text-fill: #1c1d1f;
+    -fx-wrap-text: true;
+    -fx-line-spacing: 2px;
 }
 
-.section-header {
-    -fx-font-size: 18px;
+/* Rating and Stats */
+.rating-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #b4690e;
     -fx-font-weight: bold;
-    -fx-text-fill: #2D3748;
-    -fx-padding: 0 0 10 0;
 }
 
-/* Sidebar Styling - Fix Glitch here */
-.sidebar-area {
-    -fx-background-color: white;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, -5, 0);
+.rating-count {
+    -fx-font-size: 14px;
+    -fx-text-fill: #0056d2;
+    -fx-cursor: hand;
 }
 
-.course-thumbnail {
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
-    -fx-arc-width: 10;
-    -fx-arc-height: 10;
+.rating-count:hover {
+    -fx-text-fill: #003d99;
+    -fx-underline: true;
 }
 
-.action-card {
-    -fx-background-color: #fff;
-    -fx-border-color: #E2E8F0;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+.student-count {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6a6f73;
 }
 
-.price-label {
+/* Instructor */
+.instructor-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6a6f73;
+}
+
+.instructor-link {
+    -fx-font-size: 14px;
+    -fx-text-fill: #0056d2;
+}
+
+.instructor-link:hover {
+    -fx-text-fill: #003d99;
+    -fx-underline: true;
+}
+
+/* Metadata */
+.metadata {
+    -fx-padding: 5px 0;
+}
+
+.metadata-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6a6f73;
+}
+
+/* Content Sections */
+.content-section {
+    -fx-padding: 30px 0;
+    -fx-border-color: transparent transparent #d1d7dc transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.section-title-large {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
-    -fx-text-fill: #2D3748;
+    -fx-text-fill: #1c1d1f;
 }
 
-.status-text {
-    -fx-font-size: 12px;
-    -fx-text-fill: #718096;
-}
-
-.features-card {
-    -fx-padding: 20;
-    -fx-background-color: #F7FAFC;
-    -fx-background-radius: 8;
-}
-
-.card-title {
-    -fx-font-weight: bold;
+.content-summary {
     -fx-font-size: 14px;
-    -fx-padding: 0 0 5 0;
+    -fx-text-fill: #6a6f73;
 }
 
-/* Button Styles */
-.btn-primary-large {
-    -fx-background-color: #3182CE;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
+.expand-link {
+    -fx-font-size: 14px;
+    -fx-text-fill: #0056d2;
+}
+
+.expand-link:hover {
+    -fx-text-fill: #003d99;
+}
+
+/* Lessons Container */
+.lessons-container {
+    -fx-background-color: white;
+    -fx-border-color: #d1d7dc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+/* Lesson Section */
+.lesson-section {
+    -fx-border-color: transparent transparent #d1d7dc transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.lesson-section-header {
+    -fx-padding: 16px 24px;
+    -fx-background-color: #f7f9fa;
+    -fx-cursor: hand;
+}
+
+.lesson-section-header:hover {
+    -fx-background-color: #e8f1fc;
+}
+
+.lesson-section-title {
     -fx-font-size: 16px;
-    -fx-padding: 12 24;
-    -fx-background-radius: 6;
-    -fx-cursor: hand;
-}
-
-.btn-primary-large:hover {
-    -fx-background-color: #2B6CB0;
-}
-
-.btn-secondary-small {
-    -fx-background-color: transparent;
-    -fx-text-fill: #3182CE;
-    -fx-border-color: #3182CE;
-    -fx-border-radius: 4;
-    -fx-cursor: hand;
-}
-
-.btn-secondary-small:hover {
-    -fx-background-color: #EBF8FF;
-}
-
-/* Tab Pane Styling */
-.tab-pane .tab-header-area .tab-header-background {
-    -fx-background-color: transparent;
-}
-
-.tab-pane .tab {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent #E2E8F0 transparent;
-    -fx-border-width: 0 0 2 0;
-    -fx-padding: 10 20;
-}
-
-.tab-pane .tab:selected {
-    -fx-border-color: transparent transparent #3182CE transparent;
-    -fx-border-width: 0 0 2 0;
-}
-
-.tab-pane .tab-label {
-    -fx-text-fill: #718096;
-    -fx-font-size: 14px;
     -fx-font-weight: bold;
+    -fx-text-fill: #1c1d1f;
 }
 
-.tab-pane .tab:selected .tab-label {
-    -fx-text-fill: #3182CE;
+.lesson-section-count {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6a6f73;
+}
+
+.lesson-section-icon {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6a6f73;
+}
+
+/* Lesson List */
+.lesson-list {
+    -fx-background-color: white;
+}
+
+/* Lesson Item */
+.lesson-item {
+    -fx-padding: 12px 24px;
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #e8e8e8 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.lesson-item:hover {
+    -fx-background-color: #f7f9fa;
+}
+
+.lesson-item.locked {
+    -fx-opacity: 0.6;
+    -fx-cursor: not-allowed;
+}
+
+.lesson-item.locked:hover {
+    -fx-background-color: white;
+}
+
+.lesson-title {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1c1d1f;
+}
+
+.lesson-preview-badge {
+    -fx-background-color: transparent;
+    -fx-text-fill: #0056d2;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 2px 8px;
+    -fx-border-color: #0056d2;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.lesson-duration {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6a6f73;
+}
+
+/* Learning Objectives */
+.learning-objective-item {
+    -fx-padding: 8px 0;
+}
+
+.learning-objective-item Label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1c1d1f;
+}
+
+/* Requirements */
+.requirement-item {
+    -fx-padding: 5px 0;
+}
+
+.requirement-item Label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1c1d1f;
+}
+
+/* Course Includes */
+.course-include-item {
+    -fx-padding: 8px 0;
+}
+
+.course-include-item Label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1c1d1f;
+}
+
+/* Right Sidebar */
+.course-sidebar {
+    -fx-padding: 40px 40px 40px 20px;
+    -fx-pref-width: 400px;
+    -fx-max-width: 400px;
+}
+
+/* Thumbnail Preview */
+.course-thumbnail-preview {
+    -fx-fit-width: 340;
+    -fx-fit-height: 190;
+    -fx-background-color: #2d2f31;
+    -fx-background-radius: 4px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 2);
+}
+
+/* Price Section */
+.price-section {
+    -fx-padding: 20px 24px;
+    -fx-background-color: white;
+    -fx-border-color: #d1d7dc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 8, 0, 0, 2);
+}
+
+/* Price Label */
+.course-price {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1c1d1f;
+}
+
+/* Enroll Button */
+.enroll-button {
+    -fx-background-color: #a435f0;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 24px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+
+.enroll-button:hover {
+    -fx-background-color: #8710d8;
+}
+
+.enroll-button:pressed {
+    -fx-background-color: #7309b8;
+}
+
+/* Continue Button */
+.continue-button {
+    -fx-background-color: #0056d2;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 24px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+
+.continue-button:hover {
+    -fx-background-color: #003d99;
+}
+
+.continue-button:pressed {
+    -fx-background-color: #002f75;
+}
+
+/* Guarantees */
+.guarantees {
+    -fx-padding: 15px 0;
+}
+
+.guarantee-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1c1d1f;
+    -fx-padding: 3px 0;
+}
+
+/* Share Links */
+.share-link {
+    -fx-font-size: 14px;
+    -fx-text-fill: #0056d2;
+}
+
+.share-link:hover {
+    -fx-text-fill: #003d99;
+}
+
+/* Placeholder Thumbnail */
+.placeholder-thumbnail {
+    -fx-background-color: #2d2f31;
+    -fx-border-color: #d1d7dc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+/* Scrollbar Styling */
+.detail-scroll-pane .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.detail-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: #d1d7dc;
+    -fx-background-radius: 5px;
+}
+
+.detail-scroll-pane .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #a1a7ac;
+}
+
+.detail-scroll-pane .scroll-bar:vertical .increment-button,
+.detail-scroll-pane .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
 }

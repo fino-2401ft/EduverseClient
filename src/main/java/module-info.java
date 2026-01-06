@@ -9,7 +9,9 @@ module org.example.eduverseclient {
     requires static lombok;
     requires java.desktop;  // Cho các class AWT (BufferedImage, Dimension)
     requires javafx.swing;
-    requires webcam.capture;  // Cho SwingFXUtils
+    requires webcam.capture;
+    requires cloudinary.core;
+    requires javafx.web;  // Cho SwingFXUtils
 
     opens org.example.eduverseclient to javafx.fxml;
     exports org.example.eduverseclient;

@@ -1,5 +1,5 @@
 package common.enums;
 
 public enum MessageType {
-    TEXT, FILE, SYSTEM, JOIN, LEAVE
+    TEXT, FILE, IMAGE, VIDEO, SYSTEM, JOIN, LEAVE
 }
