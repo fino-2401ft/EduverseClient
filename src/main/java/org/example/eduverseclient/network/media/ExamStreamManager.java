@@ -203,16 +203,34 @@ public class ExamStreamManager {
         }
         lastAnalysisTime = now;
 
+        log.debug("🔍 Sending frame for anti-cheat analysis - ExamId: {}, UserId: {}, FrameSize: {} bytes", 
+                examId, myPeer.getUserId(), frameBytes.length);
+
         antiCheatService.analyzeFrame(frameBytes, examId, myPeer.getUserId())
                 .thenAccept(result -> {
-                    if (result != null && violationCallback != null) {
-                        violationCallback.accept(result);
+                    if (result != null) {
+                        log.info("📊 Anti-cheat result - Decision: {}, Score: {:.2f}, Flags: {}", 
+                                result.decision, String.format("%.2f", result.suspicionScore), result.flags);
+                        
+                        if (violationCallback != null) {
+                            log.debug("📢 Calling violation callback");
+                            violationCallback.accept(result);
+                        } else {
+                            log.warn("⚠️ Violation callback is null! Cannot notify UI.");
+                        }
                         
                         // Nếu violation, gửi đến server
                         if ("VIOLATION".equals(result.decision) || result.suspicionScore >= 0.70) {
+                            log.warn("🚨 VIOLATION detected! Reporting to server...");
                             reportViolationToServer(result);
                         }
+                    } else {
+                        log.warn("⚠️ Anti-cheat analysis returned null result");
                     }
+                })
+                .exceptionally(ex -> {
+                    log.error("❌ Error in anti-cheat analysis callback", ex);
+                    return null;
                 });
     }
 

@@ -724,19 +724,45 @@ public class ExamRoomController {
 
     private void setupAntiCheat() {
         if (examStreamManager != null && !isProctor) {
+            log.info("🔧 Setting up anti-cheat callback for student...");
             examStreamManager.setViolationCallback(result -> {
+                log.info("📨 Received violation callback - Result: {}", result != null ? result.decision : "null");
                 Platform.runLater(() -> {
-                    if (result != null && !"OK".equals(result.decision)) {
-                        showViolationAlert(result);
+                    if (result != null) {
+                        log.info("📊 Processing result - Decision: {}, Score: {:.2f}, Flags: {}", 
+                                result.decision, String.format("%.2f", result.suspicionScore), result.flags);
+                        
+                        // Hiển thị tất cả results (kể cả OK để debug)
+                        if (!"OK".equals(result.decision)) {
+                            log.info("⚠️ Showing violation alert - Decision: {}", result.decision);
+                            showViolationAlert(result);
+                        } else {
+                            log.debug("✅ Result is OK, no alert needed");
+                        }
+                    } else {
+                        log.warn("⚠️ Violation callback received null result");
                     }
                 });
             });
             log.info("✅ Anti-cheat monitoring enabled for student");
+        } else {
+            if (examStreamManager == null) {
+                log.warn("⚠️ Cannot setup anti-cheat: examStreamManager is null");
+            }
+            if (isProctor) {
+                log.debug("ℹ️ Anti-cheat not needed for proctor");
+            }
         }
     }
 
     private void showViolationAlert(org.example.eduverseclient.service.AntiCheatService.AnalysisResult result) {
-        if (alertContainer == null) return;
+        if (alertContainer == null) {
+            log.error("❌ alertContainer is null! Cannot show violation alert.");
+            return;
+        }
+        
+        log.info("🎨 Creating violation alert UI - Decision: {}, Score: {:.2f}", 
+                result.decision, String.format("%.2f", result.suspicionScore));
         
         String style = "-fx-background-color: #E53935; -fx-text-fill: white; -fx-padding: 10; -fx-background-radius: 5; -fx-font-size: 12;";
         if ("WARNING".equals(result.decision)) {
@@ -750,13 +776,18 @@ public class ExamRoomController {
         alert.setWrapText(true);
         alert.setMaxWidth(Double.MAX_VALUE);
         
+        log.info("➕ Adding alert to container. Current children count: {}", alertContainer.getChildren().size());
         alertContainer.getChildren().add(alert);
+        log.info("✅ Alert added. New children count: {}", alertContainer.getChildren().size());
         
         // Auto-remove sau 5 giây
         new Thread(() -> {
             try {
                 Thread.sleep(5000);
-                Platform.runLater(() -> alertContainer.getChildren().remove(alert));
+                Platform.runLater(() -> {
+                    boolean removed = alertContainer.getChildren().remove(alert);
+                    log.debug("🗑️ Auto-removed alert: {}", removed);
+                });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

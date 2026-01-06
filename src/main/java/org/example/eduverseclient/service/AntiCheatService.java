@@ -38,6 +38,8 @@ public class AntiCheatService {
     public CompletableFuture<AnalysisResult> analyzeFrame(byte[] imageBytes, String examId, String userId) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                log.debug("🔍 Analyzing frame - User: {}, Exam: {}, Frame size: {} bytes", userId, examId, imageBytes.length);
+                
                 String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
                 
                 // Manual JSON construction
@@ -46,6 +48,7 @@ public class AntiCheatService {
                     escapeJson(userId), escapeJson(examId), base64Image
                 );
 
+                log.debug("📤 Sending request to AI service: {}", AI_SERVICE_URL);
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(AI_SERVICE_URL))
                         .header("Content-Type", "application/json")
@@ -55,14 +58,23 @@ public class AntiCheatService {
 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+                log.debug("📥 AI service response - Status: {}, Body length: {}", response.statusCode(), response.body().length());
+
                 if (response.statusCode() == 200) {
-                    return parseJsonResponse(response.body());
+                    AnalysisResult result = parseJsonResponse(response.body());
+                    if (result != null) {
+                        log.info("✅ AI Analysis - Decision: {}, Score: {:.2f}, Flags: {}", 
+                                result.decision, String.format("%.2f", result.suspicionScore), result.flags);
+                    } else {
+                        log.warn("⚠️ Failed to parse AI response");
+                    }
+                    return result;
                 } else {
-                    log.warn("AI service returned status: {}", response.statusCode());
+                    log.warn("⚠️ AI service returned status: {}, Body: {}", response.statusCode(), response.body());
                     return null;
                 }
             } catch (Exception e) {
-                log.warn("Failed to analyze frame: {}", e.getMessage());
+                log.error("❌ Failed to analyze frame: {}", e.getMessage(), e);
                 return null; // Return null on error, don't block exam
             }
         });
