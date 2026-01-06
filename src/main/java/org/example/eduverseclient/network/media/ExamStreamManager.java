@@ -59,7 +59,7 @@ public class ExamStreamManager {
     private long lastPeerUpdateTime = 0;
     private static final long PEER_UPDATE_INTERVAL = 2000;
     private ScheduledExecutorService peerUpdateExecutor;
-    
+
     // Circuit breaker for updatePeerList
     private int consecutiveFailures = 0;
     private static final int MAX_FAILURES = 3;
@@ -68,10 +68,9 @@ public class ExamStreamManager {
 
     // Callbacks
     private BiConsumer<String, Image> videoCallback;
-    
+
     // Anti-cheating
     private org.example.eduverseclient.service.AntiCheatService antiCheatService;
-    private ScheduledExecutorService antiCheatExecutor;
     private long lastAnalysisTime = 0;
     private static final long ANALYSIS_INTERVAL_MS = 1000; // 1 FPS
     private java.util.function.Consumer<org.example.eduverseclient.service.AntiCheatService.AnalysisResult> violationCallback;
@@ -83,7 +82,7 @@ public class ExamStreamManager {
         this.examId = participant.getExamId();
         this.audioPlayers = new ConcurrentHashMap<>();
         this.antiCheatService = org.example.eduverseclient.service.AntiCheatService.getInstance();
-        log.info("✅ ExamStreamManager initialized - Role: {}, ExamId: {}", 
+        log.info("✅ ExamStreamManager initialized - Role: {}, ExamId: {}",
                 isProctor ? "PROCTOR" : "STUDENT", examId);
     }
 
@@ -117,7 +116,6 @@ public class ExamStreamManager {
                     videoCallback.accept(senderId, receivedImage);
                 }
                 // Proctor forward video từ students đến tất cả participants khác
-                // (không forward video của chính mình)
                 if (isProctor && !senderId.equals(myPeer.getUserId())) {
                     forwardVideoToOthers(senderId, receivedImage);
                 }
@@ -127,7 +125,7 @@ public class ExamStreamManager {
                     frameData -> {
                         if (isProctor) {
                             // PROCTOR: Broadcast camera của mình đến TẤT CẢ students
-                            updatePeerList(); // Update peer list trước khi gửi
+                            updatePeerList();
                             if (otherPeers != null && !otherPeers.isEmpty() && videoSender != null) {
                                 otherPeers.forEach(peer -> {
                                     try {
@@ -140,7 +138,7 @@ public class ExamStreamManager {
                         } else {
                             // STUDENT: Gửi video đến proctor (proctor sẽ forward)
                             sendFrameToProctor(frameData);
-                            
+
                             // Analyze frame for anti-cheat (chỉ cho students, 1 FPS)
                             analyzeFrameForAntiCheat(frameData);
                         }
@@ -160,7 +158,6 @@ public class ExamStreamManager {
 
             audioReceiver.start((senderId, audioData) -> {
                 playAudio(senderId, audioData);
-                // Proctor forward audio đến tất cả participants khác
                 if (isProctor) {
                     forwardAudioToOthers(senderId, audioData);
                 }
@@ -168,7 +165,6 @@ public class ExamStreamManager {
 
             microphoneCapture.start(audioData -> {
                 if (isProctor) {
-                    // PROCTOR: Broadcast audio đến tất cả students
                     if (otherPeers != null && !otherPeers.isEmpty() && audioSender != null) {
                         otherPeers.forEach(peer -> {
                             try {
@@ -179,7 +175,6 @@ public class ExamStreamManager {
                         });
                     }
                 } else {
-                    // STUDENT: Gửi audio đến proctor
                     sendAudioToProctor(audioData);
                 }
             });
@@ -196,6 +191,14 @@ public class ExamStreamManager {
         this.violationCallback = callback;
     }
 
+    // ✅ JPEG header check (debug nhanh)
+    private boolean looksLikeJpeg(byte[] b) {
+        return b != null && b.length > 3
+                && (b[0] & 0xFF) == 0xFF
+                && (b[1] & 0xFF) == 0xD8
+                && (b[2] & 0xFF) == 0xFF;
+    }
+
     private void analyzeFrameForAntiCheat(byte[] frameBytes) {
         long now = System.currentTimeMillis();
         if (now - lastAnalysisTime < ANALYSIS_INTERVAL_MS) {
@@ -203,29 +206,31 @@ public class ExamStreamManager {
         }
         lastAnalysisTime = now;
 
-        log.debug("🔍 Sending frame for anti-cheat analysis - ExamId: {}, UserId: {}, FrameSize: {} bytes", 
-                examId, myPeer.getUserId(), frameBytes.length);
+        int size = (frameBytes == null ? -1 : frameBytes.length);
+        boolean jpegHeader = looksLikeJpeg(frameBytes);
+
+        log.info("🔍 Anti-cheat send frame: examId={}, userId={}, size={} bytes, jpegHeader={}",
+                examId, myPeer.getUserId(), size, jpegHeader);
 
         antiCheatService.analyzeFrame(frameBytes, examId, myPeer.getUserId())
                 .thenAccept(result -> {
                     if (result != null) {
-                        log.info("📊 Anti-cheat result - Decision: {}, Score: {:.2f}, Flags: {}", 
+                        // ✅ FIX log format
+                        log.info("📊 Anti-cheat result - Decision: {}, Score: {}, Flags: {}",
                                 result.decision, String.format("%.2f", result.suspicionScore), result.flags);
-                        
+
                         if (violationCallback != null) {
-                            log.debug("📢 Calling violation callback");
                             violationCallback.accept(result);
                         } else {
                             log.warn("⚠️ Violation callback is null! Cannot notify UI.");
                         }
-                        
-                        // Nếu violation, gửi đến server
-                        if ("VIOLATION".equals(result.decision) || result.suspicionScore >= 0.70) {
+
+                        if ("VIOLATION".equalsIgnoreCase(result.decision) || result.suspicionScore >= 0.70) {
                             log.warn("🚨 VIOLATION detected! Reporting to server...");
                             reportViolationToServer(result);
                         }
                     } else {
-                        log.warn("⚠️ Anti-cheat analysis returned null result");
+                        log.warn("⚠️ Anti-cheat returned null (size={} bytes, jpegHeader={})", size, jpegHeader);
                     }
                 })
                 .exceptionally(ex -> {
@@ -236,7 +241,6 @@ public class ExamStreamManager {
 
     private void reportViolationToServer(org.example.eduverseclient.service.AntiCheatService.AnalysisResult result) {
         try {
-            // Tạo violation object
             common.model.exam.Violation violation = common.model.exam.Violation.builder()
                     .violationId(java.util.UUID.randomUUID().toString())
                     .examId(examId)
@@ -249,7 +253,6 @@ public class ExamStreamManager {
                     .timestamp(System.currentTimeMillis())
                     .build();
 
-            // Gọi ExamService wrapper để lưu violation
             org.example.eduverseclient.service.ExamService.getInstance().reportViolation(violation);
             log.warn("🚨 VIOLATION reported to server: {} (score: {})", result.decision, result.suspicionScore);
         } catch (Exception e) {
@@ -355,43 +358,40 @@ public class ExamStreamManager {
     }
 
     public void setCameraActive(boolean active) {
-        // Trong exam, camera luôn phải ON (bắt buộc)
         if (!active) {
             log.warn("⚠️ Camera cannot be turned off in exam mode");
             return;
         }
 
         CameraCapture camera = CameraCapture.getInstance();
-        if (active) {
-            camera.start(
-                    frameData -> {
-                        if (isProctor) {
-                            if (otherPeers != null && !otherPeers.isEmpty() && videoSender != null) {
-                                otherPeers.forEach(peer -> {
-                                    try {
-                                        videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
-                                    } catch (Exception e) {
-                                        log.error("Failed to send frame to {}: {}", peer.getUserId(), e.getMessage());
-                                    }
-                                });
-                            }
-                        } else {
-                            sendFrameToProctor(frameData);
+        camera.start(
+                frameData -> {
+                    if (isProctor) {
+                        if (otherPeers != null && !otherPeers.isEmpty() && videoSender != null) {
+                            otherPeers.forEach(peer -> {
+                                try {
+                                    videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
+                                } catch (Exception e) {
+                                    log.error("Failed to send frame to {}: {}", peer.getUserId(), e.getMessage());
+                                }
+                            });
                         }
-                    },
-                    previewImage -> {
-                        if (videoCallback != null) {
-                            videoCallback.accept(myPeer.getUserId(), previewImage);
-                        }
+                    } else {
+                        sendFrameToProctor(frameData);
+                        analyzeFrameForAntiCheat(frameData);
                     }
-            );
-        }
+                },
+                previewImage -> {
+                    if (videoCallback != null) {
+                        videoCallback.accept(myPeer.getUserId(), previewImage);
+                    }
+                }
+        );
     }
 
     // --- DATA SENDING METHODS ---
 
     private void sendFrameToProctor(byte[] frameData) {
-        // Nếu chưa có proctorPeer, thử lấy lại
         if (proctorPeer == null) {
             try {
                 proctorPeer = RMIClient.getInstance().getExamService().getProctorPeer(examId);
@@ -402,7 +402,7 @@ public class ExamStreamManager {
                 log.warn("Failed to get proctor peer: {}", e.getMessage());
             }
         }
-        
+
         if (proctorPeer != null && videoSender != null) {
             try {
                 videoSender.sendFrame(frameData, proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
@@ -430,7 +430,7 @@ public class ExamStreamManager {
     // --- FORWARDING METHODS ---
 
     private void forwardVideoToOthers(String senderId, Image receivedImage) {
-        updatePeerList(); // Đảm bảo có peer list mới nhất
+        updatePeerList();
         byte[] frameData = convertImageToBytes(receivedImage);
         if (frameData == null) {
             log.warn("Failed to convert image to bytes for forwarding");
@@ -442,7 +442,6 @@ public class ExamStreamManager {
             return;
         }
 
-        // Forward đến tất cả participants khác (trừ sender và chính mình)
         otherPeers.stream()
                 .filter(p -> p != null && !p.getUserId().equals(senderId) && !p.getUserId().equals(myPeer.getUserId()))
                 .forEach(peer -> {
@@ -472,7 +471,6 @@ public class ExamStreamManager {
                 });
     }
 
-
     private byte[] convertImageToBytes(Image image) {
         try {
             BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
@@ -486,20 +484,17 @@ public class ExamStreamManager {
     }
 
     private void updatePeerList() {
-        // Circuit breaker: Nếu fail quá nhiều, tạm dừng update
         if (consecutiveFailures >= MAX_FAILURES) {
             long timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime;
             if (timeSinceLastFailure < CIRCUIT_BREAKER_TIMEOUT) {
-                return; // Circuit breaker is open, skip update
+                return;
             } else {
-                // Reset after timeout
                 consecutiveFailures = 0;
                 log.info("🔄 Circuit breaker reset, retrying peer list update");
             }
         }
 
         try {
-            // Cả proctor và student đều lấy tất cả peers (giống meeting)
             List<Peer> latestPeers = RMIClient.getInstance().getMeetingService().getAllPeers(examId);
 
             if (latestPeers != null && !latestPeers.isEmpty()) {
@@ -507,8 +502,8 @@ public class ExamStreamManager {
                         .filter(p -> p != null && !p.getUserId().equals(myPeer.getUserId()))
                         .collect(Collectors.toList());
                 this.lastPeerUpdateTime = System.currentTimeMillis();
-                consecutiveFailures = 0; // Reset on success
-                
+                consecutiveFailures = 0;
+
                 if (isProctor) {
                     log.debug("📋 Updated peer list: {} students", otherPeers.size());
                 } else {

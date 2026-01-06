@@ -15,6 +15,8 @@ module org.example.eduverseclient {
     requires java.net.http;
     requires com.google.gson;  // Cho HttpClient (không cần Gson/Jackson vì dùng manual JSON parsing)
 
+    opens org.example.eduverseclient.service to com.google.gson;
+
     opens org.example.eduverseclient to javafx.fxml;
     exports org.example.eduverseclient;
 

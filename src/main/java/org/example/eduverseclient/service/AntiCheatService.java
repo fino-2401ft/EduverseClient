@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,16 +18,16 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Service for sending webcam frames to Python FastAPI AI anti-cheating service.
- * 
+ *
  * API Endpoint: POST http://192.168.100.54:8000/analyze/frame
- * 
+ *
  * Request Body:
  * {
  *   "user_id": string,
  *   "session_id": string,
  *   "frame_base64": string
  * }
- * 
+ *
  * Response:
  * {
  *   "decision": "OK" | "WARNING" | "VIOLATION",
@@ -44,13 +45,18 @@ public class AntiCheatService {
 
     private static final String AI_SERVICE_URL = common.constant.AntiCheatConfig.AI_SERVICE_URL;
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
-    
+
     // Minimum frame size to avoid sending corrupted/empty images
     private static final int MIN_FRAME_SIZE_BYTES = 1024; // 1KB minimum
 
     private AntiCheatService() {
+        // ✅ Fix "Invalid HTTP request received" on uvicorn:
+        // - Force HTTP/1.1
+        // - Disable system proxy (often breaks local LAN requests)
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
+                .version(HttpClient.Version.HTTP_1_1)
+                .proxy(ProxySelector.of(null))
                 .build();
     }
 
@@ -62,49 +68,11 @@ public class AntiCheatService {
     }
 
     /**
-     * Request DTO matching FastAPI schema exactly.
-     * Field names must be snake_case to match Python API.
-     */
-    private static class AnalyzeFrameRequest {
-        @SuppressWarnings("unused")
-        private final String user_id;
-        
-        @SuppressWarnings("unused")
-        private final String session_id;
-        
-        @SuppressWarnings("unused")
-        private final String frame_base64;
-
-        AnalyzeFrameRequest(String userId, String sessionId, String frameBase64) {
-            this.user_id = userId != null ? userId : "";
-            this.session_id = sessionId != null ? sessionId : "";
-            this.frame_base64 = frameBase64 != null ? frameBase64 : "";
-        }
-    }
-
-    /**
-     * Response DTO matching FastAPI response schema.
-     */
-    private static class AnalyzeFrameResponse {
-        @SuppressWarnings("unused")
-        private String decision;
-        
-        @SuppressWarnings("unused")
-        private Double suspicion_score;
-        
-        @SuppressWarnings("unused")
-        private List<String> flags;
-        
-        @SuppressWarnings("unused")
-        private Map<String, Object> metrics;
-    }
-
-    /**
      * Analyzes a webcam frame using the AI anti-cheating service.
-     * 
+     *
      * @param imageBytes JPEG-encoded image bytes
-     * @param examId Session/exam ID
-     * @param userId User ID
+     * @param examId     Session/exam ID
+     * @param userId     User ID
      * @return CompletableFuture with AnalysisResult, or null if frame was skipped/error
      */
     public CompletableFuture<AnalysisResult> analyzeFrame(byte[] imageBytes, String examId, String userId) {
@@ -112,13 +80,13 @@ public class AntiCheatService {
             try {
                 // Validation: Check for null or empty frames
                 if (imageBytes == null || imageBytes.length == 0) {
-                    log.debug("⏭️ Frame skipped: null or empty image bytes");
+                    log.info("⏭️ Frame skipped: null or empty bytes");
                     return null;
                 }
 
                 // Validation: Check minimum frame size
                 if (imageBytes.length < MIN_FRAME_SIZE_BYTES) {
-                    log.debug("⏭️ Frame skipped: too small ({} bytes < {} bytes minimum)", 
+                    log.info("⏭️ Frame skipped: too small ({} bytes < {} bytes minimum)",
                             imageBytes.length, MIN_FRAME_SIZE_BYTES);
                     return null;
                 }
@@ -136,31 +104,27 @@ public class AntiCheatService {
 
                 // Normalize URL to ensure correct endpoint
                 String url = normalizeAnalyzeUrl(AI_SERVICE_URL);
-                
+
                 // Encode image to base64
                 String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-                
-                if (base64Image == null || base64Image.isEmpty()) {
-                    log.warn("⏭️ Frame skipped: base64 encoding failed");
+                if (base64Image.isEmpty()) {
+                    log.warn("⏭️ Frame skipped: base64 encoding failed/empty");
                     return null;
                 }
 
-                // Create request DTO with proper field names (snake_case)
-                AnalyzeFrameRequest request = new AnalyzeFrameRequest(
-                        userId.trim(),
-                        examId.trim(),
-                        base64Image
-                );
+                // ✅ Build JSON manually (no reflection DTO => no module-access issues)
+                JsonObject payload = new JsonObject();
+                payload.addProperty("user_id", userId.trim());
+                payload.addProperty("session_id", examId.trim());
+                payload.addProperty("frame_base64", base64Image);
 
-                // Serialize to JSON using Gson
-                String jsonBody = gson.toJson(request);
-                
+                String jsonBody = gson.toJson(payload);
                 if (jsonBody == null || jsonBody.isEmpty()) {
-                    log.error("❌ Failed to serialize request to JSON");
+                    log.error("❌ Failed to serialize request JSON body");
                     return null;
                 }
 
-                log.debug("🔍 Analyzing frame - URL: {}, User: {}, Exam: {}, Frame: {} bytes, JSON: {} chars",
+                log.info("➡️ AI request: url={}, userId={}, examId={}, frameBytes={}, jsonChars={}",
                         url, userId, examId, imageBytes.length, jsonBody.length());
 
                 // Build HTTP request with explicit UTF-8 encoding
@@ -169,25 +133,32 @@ public class AntiCheatService {
                         .timeout(TIMEOUT)
                         .header("Content-Type", "application/json; charset=UTF-8")
                         .header("Accept", "application/json")
+                        .header("User-Agent", "EduverseClient/1.0")
+                        .header("Connection", "close")
                         .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
                         .build();
 
-                // Send request
-                HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                // Send request (read response in UTF-8)
+                HttpResponse<String> response = httpClient.send(
+                        httpRequest,
+                        HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+                );
 
                 int statusCode = response.statusCode();
                 String responseBody = response.body();
 
+                log.info("⬅️ AI response: status={}, bodyPreview={}", statusCode, safePreview(responseBody, 300));
+
                 // Handle HTTP errors
                 if (statusCode == 422) {
-                    log.error("❌ HTTP 422 - Validation Error from AI service. URL: {}, Request preview: {}, Response: {}",
-                            url, safePreview(jsonBody, 200), safePreview(responseBody, 1000));
+                    log.error("❌ HTTP 422 - Validation Error. RequestPreview={}, ResponsePreview={}",
+                            safePreview(jsonBody, 250), safePreview(responseBody, 600));
                     return null;
                 }
 
                 if (statusCode != 200) {
                     log.warn("⚠️ AI service returned status {} - URL: {}, Response: {}",
-                            statusCode, url, safePreview(responseBody, 500));
+                            statusCode, url, safePreview(responseBody, 600));
                     return null;
                 }
 
@@ -196,12 +167,12 @@ public class AntiCheatService {
 
                 if (result == null) {
                     log.warn("⚠️ Failed to parse AI response - URL: {}, Response: {}",
-                            url, safePreview(responseBody, 500));
+                            url, safePreview(responseBody, 600));
                     return null;
                 }
 
-                // Log successful analysis
-                log.info("✅ AI Analysis - Decision: {}, Score: {:.2f}, Flags: {}",
+                // Log successful analysis (FIX log format)
+                log.info("✅ AI Analysis - Decision: {}, Score: {}, Flags: {}",
                         result.decision,
                         String.format("%.2f", result.suspicionScore),
                         result.flags.isEmpty() ? "none" : String.join(", ", result.flags));
@@ -231,14 +202,14 @@ public class AntiCheatService {
         }
 
         String url = rawUrl.trim();
-        
+
         // Remove trailing slash
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
 
-        // Ensure /analyze/frame endpoint
-        if (!url.contains("/analyze/frame")) {
+        // Ensure /analyze/frame endpoint (use endsWith to avoid weird contains cases)
+        if (!url.endsWith("/analyze/frame")) {
             url = url + "/analyze/frame";
         }
 
@@ -249,25 +220,13 @@ public class AntiCheatService {
      * Safely previews a string, truncating if too long.
      */
     private String safePreview(String str, int maxLength) {
-        if (str == null) {
-            return "null";
-        }
-        if (str.length() <= maxLength) {
-            return str;
-        }
+        if (str == null) return "null";
+        if (str.length() <= maxLength) return str;
         return str.substring(0, maxLength) + "... (truncated)";
     }
 
     /**
      * Parses the AI service JSON response into AnalysisResult.
-     * 
-     * Response format:
-     * {
-     *   "decision": "OK" | "WARNING" | "VIOLATION",
-     *   "suspicion_score": 0.0-1.0,
-     *   "flags": ["flag1", "flag2"],
-     *   "metrics": {...}
-     * }
      */
     private AnalysisResult parseResponse(String json) {
         try {
@@ -278,13 +237,9 @@ public class AntiCheatService {
 
             JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
-            // Extract decision (default: "OK")
             String decision = optString(jsonObject, "decision", "OK");
-
-            // Extract suspicion_score (default: 0.0)
             double suspicionScore = optDouble(jsonObject, "suspicion_score", 0.0);
 
-            // Extract flags array
             List<String> flags = new ArrayList<>();
             if (jsonObject.has("flags") && jsonObject.get("flags").isJsonArray()) {
                 jsonObject.getAsJsonArray("flags").forEach(element -> {
@@ -294,7 +249,6 @@ public class AntiCheatService {
                 });
             }
 
-            // Extract metrics object
             Map<String, Object> metrics = new HashMap<>();
             if (jsonObject.has("metrics") && jsonObject.get("metrics").isJsonObject()) {
                 JsonObject metricsObj = jsonObject.getAsJsonObject("metrics");
@@ -320,40 +274,23 @@ public class AntiCheatService {
         }
     }
 
-    /**
-     * Safely extracts a string value from JsonObject with default.
-     */
     private String optString(JsonObject obj, String key, String defaultValue) {
-        if (!obj.has(key)) {
-            return defaultValue;
-        }
+        if (!obj.has(key)) return defaultValue;
         JsonElement element = obj.get(key);
-        if (element == null || element.isJsonNull()) {
-            return defaultValue;
-        }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
-            return element.getAsString();
-        }
+        if (element == null || element.isJsonNull()) return defaultValue;
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) return element.getAsString();
         return defaultValue;
     }
 
-    /**
-     * Safely extracts a double value from JsonObject with default.
-     */
     private double optDouble(JsonObject obj, String key, double defaultValue) {
-        if (!obj.has(key)) {
-            return defaultValue;
-        }
+        if (!obj.has(key)) return defaultValue;
         JsonElement element = obj.get(key);
-        if (element == null || element.isJsonNull()) {
-            return defaultValue;
-        }
+        if (element == null || element.isJsonNull()) return defaultValue;
         try {
             if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
                 return element.getAsNumber().doubleValue();
             }
-        } catch (Exception e) {
-            log.debug("Failed to parse double for key {}: {}", key, e.getMessage());
+        } catch (Exception ignored) {
         }
         return defaultValue;
     }
@@ -374,16 +311,10 @@ public class AntiCheatService {
             this.metrics = metrics != null ? Collections.unmodifiableMap(new HashMap<>(metrics)) : Collections.emptyMap();
         }
 
-        /**
-         * Checks if this result indicates a violation.
-         */
         public boolean isViolation() {
             return "VIOLATION".equalsIgnoreCase(decision) || suspicionScore >= 0.70;
         }
 
-        /**
-         * Checks if this result indicates a warning.
-         */
         public boolean isWarning() {
             return "WARNING".equalsIgnoreCase(decision) || (suspicionScore >= 0.50 && suspicionScore < 0.70);
         }
