@@ -27,10 +27,7 @@ import java.util.stream.Collectors;
 
 /**
  * ExamStreamManager - Quản lý streaming cho Exam Room
- * Khác với Meeting:
- * - Proctor: Chỉ gửi camera của mình đến tất cả students
- * - Student: Chỉ nhận camera của proctor, KHÔNG nhận camera của students khác
- * - Không forward video giữa students (1-1 feeling: Student ↔ Proctor)
+ * Logic giống Meeting: Proctor (HOST) forward video giữa tất cả participants
  */
 @Slf4j
 public class ExamStreamManager {
@@ -57,16 +54,19 @@ public class ExamStreamManager {
     private String examId;
     private boolean isProctor;
 
-    // Peer Cache (chỉ dùng cho proctor để broadcast)
-    private List<Peer> studentPeers;
+    // Peer Cache
+    private List<Peer> otherPeers;  // Tất cả peers khác (proctor hoặc students)
     private long lastPeerUpdateTime = 0;
     private static final long PEER_UPDATE_INTERVAL = 2000;
     private ScheduledExecutorService peerUpdateExecutor;
+    
+    // Circuit breaker for updatePeerList
+    private int consecutiveFailures = 0;
+    private static final int MAX_FAILURES = 3;
+    private static final long CIRCUIT_BREAKER_TIMEOUT = 10000;
+    private long lastFailureTime = 0;
 
     // Callbacks
-    private UDPChatSender chatSender;
-    private UDPChatReceiver chatReceiver;
-    private BiConsumer<String, String> chatMessageCallback;
     private BiConsumer<String, Image> videoCallback;
 
     public ExamStreamManager(ExamParticipant participant, boolean isProctor) {
@@ -79,11 +79,9 @@ public class ExamStreamManager {
                 isProctor ? "PROCTOR" : "STUDENT", examId);
     }
 
-    public void start(Peer proctorPeer, BiConsumer<String, Image> videoCallback, 
-                     BiConsumer<String, String> chatCallback) {
+    public void start(Peer proctorPeer, BiConsumer<String, Image> videoCallback) {
         this.proctorPeer = proctorPeer;
         this.videoCallback = videoCallback;
-        this.chatMessageCallback = chatCallback;
 
         try {
             // 1. INITIALIZE SOCKETS
@@ -94,13 +92,11 @@ public class ExamStreamManager {
             log.info("✅ Sockets bound: Video={}, Audio={}, Chat={}",
                     myPeer.getVideoPort(), myPeer.getAudioPort(), myPeer.getChatPort());
 
-            // Initial peer list update (chỉ proctor cần)
-            if (isProctor) {
-                updatePeerList();
-                peerUpdateExecutor = Executors.newSingleThreadScheduledExecutor();
-                peerUpdateExecutor.scheduleAtFixedRate(this::updatePeerList,
-                        PEER_UPDATE_INTERVAL, PEER_UPDATE_INTERVAL, TimeUnit.MILLISECONDS);
-            }
+            // Initial peer list update
+            updatePeerList();
+            peerUpdateExecutor = Executors.newSingleThreadScheduledExecutor();
+            peerUpdateExecutor.scheduleAtFixedRate(this::updatePeerList,
+                    PEER_UPDATE_INTERVAL, PEER_UPDATE_INTERVAL, TimeUnit.MILLISECONDS);
 
             // ============ VIDEO ============
             cameraCapture = CameraCapture.getInstance();
@@ -108,61 +104,13 @@ public class ExamStreamManager {
             videoReceiver = new UDPVideoReceiver(videoSocket);
 
             videoReceiver.start((senderId, receivedImage) -> {
+                // Nhận video và hiển thị
+                if (videoCallback != null) {
+                    videoCallback.accept(senderId, receivedImage);
+                }
+                // Proctor forward video đến tất cả participants khác
                 if (isProctor) {
-                    // PROCTOR: Nhận video từ TẤT CẢ students để hiển thị trong grid
-                    String currentUserId = myPeer.getUserId();
-                    if (!senderId.equals(currentUserId)) {
-                        // Video từ student (không phải chính mình)
-                        log.debug("📥 Proctor received video from student: {}", senderId);
-                        if (videoCallback != null) {
-                            videoCallback.accept(senderId, receivedImage);
-                        } else {
-                            log.warn("⚠️ Video callback is null for proctor");
-                        }
-                    }
-                } else {
-                    // STUDENT: Chỉ nhận video từ proctor
-                    // Lấy exam để check proctorId
-                    try {
-                        common.model.exam.Exam exam = org.example.eduverseclient.RMIClient.getInstance()
-                                .getExamService().getExamById(examId);
-                        if (exam != null) {
-                            String proctorId = exam.getProctorId();
-                            
-                            // Nếu senderId là proctorId, thì accept video
-                            if (senderId.equals(proctorId)) {
-                                // Update proctorPeer nếu chưa có hoặc không khớp
-                                if (proctorPeer == null || !senderId.equals(proctorPeer.getUserId())) {
-                                    Peer latestProctorPeer = org.example.eduverseclient.RMIClient.getInstance()
-                                            .getExamService().getProctorPeer(examId);
-                                    if (latestProctorPeer != null) {
-                                        this.proctorPeer = latestProctorPeer;
-                                        log.info("✅ Updated proctor peer: {} -> {}:{}", 
-                                                senderId, proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
-                                    }
-                                }
-                                
-                                // Nhận video từ proctor
-                                log.debug("📥 Student received video from proctor: {}", senderId);
-                                if (videoCallback != null) {
-                                    videoCallback.accept(senderId, receivedImage);
-                                } else {
-                                    log.warn("⚠️ Video callback is null for student");
-                                }
-                            } else {
-                                log.debug("⚠️ Video not from proctor. Expected proctorId: {}, Got: {}", 
-                                        proctorId, senderId);
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("Failed to verify proctor: {}", e.getMessage());
-                        // Fallback: Nếu proctorPeer đã được set, accept video từ nó
-                        if (proctorPeer != null && senderId.equals(proctorPeer.getUserId())) {
-                            if (videoCallback != null) {
-                                videoCallback.accept(senderId, receivedImage);
-                            }
-                        }
-                    }
+                    forwardVideoToOthers(senderId, receivedImage);
                 }
             });
 
@@ -170,59 +118,24 @@ public class ExamStreamManager {
                     frameData -> {
                         if (isProctor) {
                             // PROCTOR: Broadcast camera của mình đến TẤT CẢ students
-                            updatePeerList();
-                            if (studentPeers != null && !studentPeers.isEmpty() && videoSender != null) {
-                                studentPeers.forEach(peer -> {
+                            if (otherPeers != null && !otherPeers.isEmpty() && videoSender != null) {
+                                otherPeers.forEach(peer -> {
                                     try {
                                         videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
-                                        log.trace("📤 Proctor sent frame to student {}:{}", 
-                                                peer.getIpAddress(), peer.getVideoPort());
                                     } catch (Exception e) {
-                                        log.error("Failed to send frame to student {}:{}: {}", 
-                                                peer.getIpAddress(), peer.getVideoPort(), e.getMessage());
+                                        log.error("Failed to send frame to {}: {}", peer.getUserId(), e.getMessage());
                                     }
                                 });
-                            } else {
-                                log.debug("⚠️ No students to send video to (peers: {})", 
-                                        studentPeers != null ? studentPeers.size() : 0);
                             }
                         } else {
-                            // STUDENT: Gửi video đến proctor (để proctor xem trong grid)
-                            // Đảm bảo proctorPeer được set đúng
-                            if (proctorPeer == null) {
-                                try {
-                                    Peer latestProctorPeer = org.example.eduverseclient.RMIClient.getInstance()
-                                            .getExamService().getProctorPeer(examId);
-                                    if (latestProctorPeer != null) {
-                                        this.proctorPeer = latestProctorPeer;
-                                        log.info("✅ Updated proctor peer for sending: {} -> {}:{}", 
-                                                proctorPeer.getUserId(), proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
-                                    }
-                                } catch (Exception e) {
-                                    log.warn("Failed to get proctor peer for sending: {}", e.getMessage());
-                                }
-                            }
-                            
-                            if (proctorPeer != null && videoSender != null) {
-                                try {
-                                    videoSender.sendFrame(frameData, proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
-                                } catch (Exception e) {
-                                    log.error("Failed to send frame to proctor {}:{}: {}", 
-                                            proctorPeer.getIpAddress(), proctorPeer.getVideoPort(), e.getMessage());
-                                }
-                            }
-                            // Không log warning nếu proctorPeer null vì có thể proctor chưa join
+                            // STUDENT: Gửi video đến proctor (proctor sẽ forward)
+                            sendFrameToProctor(frameData);
                         }
                     },
                     previewImage -> {
-                        // Preview camera của chính mình (cho cả proctor và student)
-                        // Chỉ gọi callback để hiển thị preview, không gửi qua network
+                        // Preview camera của chính mình
                         if (videoCallback != null) {
-                            try {
-                                videoCallback.accept(myPeer.getUserId(), previewImage);
-                            } catch (Exception e) {
-                                log.warn("Error in preview callback: {}", e.getMessage());
-                            }
+                            videoCallback.accept(myPeer.getUserId(), previewImage);
                         }
                     }
             );
@@ -233,33 +146,18 @@ public class ExamStreamManager {
             audioReceiver = new UDPAudioReceiver(audioSocket);
 
             audioReceiver.start((senderId, audioData) -> {
-                // STUDENT: Chỉ nhận audio từ proctor
-                if (!isProctor) {
-                    // Lấy lại proctorPeer nếu cần
-                    if (proctorPeer == null || !senderId.equals(proctorPeer.getUserId())) {
-                        try {
-                            Peer latestProctorPeer = org.example.eduverseclient.RMIClient.getInstance()
-                                    .getExamService().getProctorPeer(examId);
-                            if (latestProctorPeer != null && senderId.equals(latestProctorPeer.getUserId())) {
-                                this.proctorPeer = latestProctorPeer;
-                            }
-                        } catch (Exception e) {
-                            // Ignore
-                        }
-                    }
-                    
-                    if (proctorPeer != null && senderId.equals(proctorPeer.getUserId())) {
-                        playAudio(senderId, audioData);
-                    }
+                playAudio(senderId, audioData);
+                // Proctor forward audio đến tất cả participants khác
+                if (isProctor) {
+                    forwardAudioToOthers(senderId, audioData);
                 }
             });
 
             microphoneCapture.start(audioData -> {
                 if (isProctor) {
                     // PROCTOR: Broadcast audio đến tất cả students
-                    updatePeerList();
-                    if (studentPeers != null && audioSender != null) {
-                        studentPeers.forEach(peer -> {
+                    if (otherPeers != null && !otherPeers.isEmpty() && audioSender != null) {
+                        otherPeers.forEach(peer -> {
                             try {
                                 audioSender.sendAudio(audioData, peer.getIpAddress(), peer.getAudioPort());
                             } catch (Exception e) {
@@ -268,33 +166,10 @@ public class ExamStreamManager {
                         });
                     }
                 } else {
-                    // STUDENT: Gửi audio đến proctor (nếu cần)
-                    if (proctorPeer != null) {
-                        audioSender.sendAudio(audioData, proctorPeer.getIpAddress(), proctorPeer.getAudioPort());
-                    }
+                    // STUDENT: Gửi audio đến proctor
+                    sendAudioToProctor(audioData);
                 }
             });
-
-            // ============ CHAT ============
-            chatSender = new UDPChatSender(chatSocket, myPeer.getUserId());
-            chatReceiver = new UDPChatReceiver(chatSocket);
-
-            chatReceiver.start(
-                    (senderId, conversationId, message) -> {
-                        if (chatMessageCallback != null) chatMessageCallback.accept(senderId, message);
-                        // Proctor forward chat đến students (tương tự meeting)
-                        if (isProctor) {
-                            forwardChatToStudents(senderId, message);
-                        }
-                    },
-                    new UDPChatReceiver.FileTransferCallback() {
-                        @Override public void onFileStart(String senderId, String conversationId, String fileName, int fileSize, int totalChunks) {}
-                        @Override public void onFileChunk(String senderId, String conversationId, int chunkIndex, int totalChunks) {}
-                        @Override public void onFileComplete(String senderId, String conversationId, String fileName, byte[] fileData) {
-                            log.info("✅ File received: {}", fileName);
-                        }
-                    }
-            );
 
             log.info("✅ Exam streaming started successfully!");
 
@@ -347,13 +222,6 @@ public class ExamStreamManager {
                     audioReceiver.stop();
                 } catch (Exception e) {
                     log.warn("Error stopping audio receiver", e);
-                }
-            }
-            if (chatReceiver != null) {
-                try {
-                    chatReceiver.stop();
-                } catch (Exception e) {
-                    log.warn("Error stopping chat receiver", e);
                 }
             }
 
@@ -420,9 +288,8 @@ public class ExamStreamManager {
             camera.start(
                     frameData -> {
                         if (isProctor) {
-                            updatePeerList();
-                            if (studentPeers != null && videoSender != null) {
-                                studentPeers.forEach(peer -> {
+                            if (otherPeers != null && !otherPeers.isEmpty() && videoSender != null) {
+                                otherPeers.forEach(peer -> {
                                     try {
                                         videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
                                     } catch (Exception e) {
@@ -430,6 +297,8 @@ public class ExamStreamManager {
                                     }
                                 });
                             }
+                        } else {
+                            sendFrameToProctor(frameData);
                         }
                     },
                     previewImage -> {
@@ -441,70 +310,114 @@ public class ExamStreamManager {
         }
     }
 
-    public void sendChatMessage(String message) {
-        if (chatSender == null) {
-            log.error("❌ Chat sender is not initialized");
-            return;
-        }
+    // --- DATA SENDING METHODS ---
 
-        if (chatSocket == null || chatSocket.isClosed()) {
-            log.error("❌ Chat socket is not available");
-            return;
-        }
-
-        if (isProctor) {
-            // PROCTOR: Broadcast đến tất cả students
-            forwardChatToStudents(myPeer.getUserId(), message);
-        } else {
-            // STUDENT: Gửi đến proctor
-            if (proctorPeer != null) {
-                try {
-                    chatSender.sendMessage(examId, message, proctorPeer.getIpAddress(), proctorPeer.getChatPort());
-                } catch (Exception e) {
-                    log.error("❌ Failed to send chat message to proctor: {}", e.getMessage());
-                }
-            } else {
-                log.warn("⚠️ Cannot send chat: Proctor peer is null");
+    private void sendFrameToProctor(byte[] frameData) {
+        if (proctorPeer != null && videoSender != null) {
+            try {
+                videoSender.sendFrame(frameData, proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
+            } catch (Exception e) {
+                log.error("Failed to send frame to proctor: {}", e.getMessage());
             }
         }
     }
 
-    private void forwardChatToStudents(String senderId, String message) {
-        updatePeerList();
-        if (studentPeers == null) return;
+    private void sendAudioToProctor(byte[] audioData) {
+        if (proctorPeer != null && audioSender != null) {
+            try {
+                audioSender.sendAudio(audioData, proctorPeer.getIpAddress(), proctorPeer.getAudioPort());
+            } catch (Exception e) {
+                log.error("Failed to send audio to proctor: {}", e.getMessage());
+            }
+        }
+    }
 
-        studentPeers.stream()
-                .filter(p -> !p.getUserId().equals(senderId) && !p.getUserId().equals(myPeer.getUserId()))
-                .forEach(peer -> {
-                    try {
-                        chatSender.forwardMessage(senderId, examId, message, peer.getIpAddress(), peer.getChatPort());
-                    } catch (Exception e) {
-                        log.error("Forward chat failed to {}: {}", peer.getUserId(), e.getMessage());
-                    }
-                });
+    // --- FORWARDING METHODS ---
+
+    private void forwardVideoToOthers(String senderId, Image receivedImage) {
+        updatePeerList();
+        byte[] frameData = convertImageToBytes(receivedImage);
+        if (frameData == null) return;
+
+        forwardData(senderId, (peer) -> {
+            try {
+                videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
+            } catch (Exception e) {
+                log.error("Failed to forward video to {}: {}", peer.getUserId(), e.getMessage());
+            }
+        });
+    }
+
+    private void forwardAudioToOthers(String senderId, byte[] audioData) {
+        updatePeerList();
+        forwardData(senderId, (peer) -> {
+            try {
+                audioSender.sendAudio(audioData, peer.getIpAddress(), peer.getAudioPort());
+            } catch (Exception e) {
+                log.error("Failed to forward audio to {}: {}", peer.getUserId(), e.getMessage());
+            }
+        });
+    }
+
+    private void forwardData(String senderId, java.util.function.Consumer<Peer> action) {
+        if (otherPeers == null || otherPeers.isEmpty()) {
+            return;
+        }
+
+        otherPeers.stream()
+                .filter(p -> p != null && !p.getUserId().equals(senderId) && !p.getUserId().equals(myPeer.getUserId()))
+                .forEach(action);
+    }
+
+    private byte[] convertImageToBytes(Image image) {
+        try {
+            BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(bufferedImage, "jpg", baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Failed to convert image to bytes", e);
+            return null;
+        }
     }
 
     private void updatePeerList() {
-        if (!isProctor) return; // Chỉ proctor cần update peer list
+        // Circuit breaker: Nếu fail quá nhiều, tạm dừng update
+        if (consecutiveFailures >= MAX_FAILURES) {
+            long timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime;
+            if (timeSinceLastFailure < CIRCUIT_BREAKER_TIMEOUT) {
+                return; // Circuit breaker is open, skip update
+            } else {
+                // Reset after timeout
+                consecutiveFailures = 0;
+                log.info("🔄 Circuit breaker reset, retrying peer list update");
+            }
+        }
 
         try {
-            List<Peer> latestPeers = RMIClient.getInstance().getExamService().getAllStudentPeers(examId);
+            // Cả proctor và student đều lấy tất cả peers (giống meeting)
+            List<Peer> latestPeers = RMIClient.getInstance().getMeetingService().getAllPeers(examId);
+
             if (latestPeers != null && !latestPeers.isEmpty()) {
-                int oldSize = studentPeers != null ? studentPeers.size() : 0;
-                this.studentPeers = latestPeers;
+                this.otherPeers = latestPeers.stream()
+                        .filter(p -> p != null && !p.getUserId().equals(myPeer.getUserId()))
+                        .collect(Collectors.toList());
                 this.lastPeerUpdateTime = System.currentTimeMillis();
-                if (oldSize != studentPeers.size()) {
-                    log.info("📋 Updated student peer list: {} students (was: {})", studentPeers.size(), oldSize);
+                consecutiveFailures = 0; // Reset on success
+                
+                if (isProctor) {
+                    log.debug("📋 Updated peer list: {} students", otherPeers.size());
+                } else {
+                    log.debug("📋 Updated peer list: {} peers", otherPeers.size());
                 }
             } else {
-                if (studentPeers == null || !studentPeers.isEmpty()) {
-                    this.studentPeers = new ArrayList<>();
-                    log.debug("📋 No students in exam yet");
-                }
+                this.otherPeers = new ArrayList<>();
             }
         } catch (Exception e) {
-            log.warn("⚠️ Server connection lost. Using cached peer list ({} students). Error: {}",
-                    (studentPeers != null ? studentPeers.size() : 0), e.getMessage());
+            consecutiveFailures++;
+            lastFailureTime = System.currentTimeMillis();
+            log.warn("⚠️ Server connection lost. Using cached peer list ({} peers). Error: {}",
+                    (otherPeers != null ? otherPeers.size() : 0), e.getMessage());
         }
     }
 
@@ -517,4 +430,3 @@ public class ExamStreamManager {
         }).play(audioData);
     }
 }
-

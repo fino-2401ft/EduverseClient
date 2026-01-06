@@ -26,10 +26,9 @@
     <center>
         <HBox spacing="10" style="-fx-padding: 10;">
 
-            <!-- LEFT: Video Panels -->
-            <!-- Proctor: Grid view để xem nhiều students -->
-            <VBox fx:id="proctorVideoSection" spacing="10" prefWidth="600" style="-fx-background-color: #1E1E1E;" managed="false" visible="false">
-                <Label text="📹 Danh sách thí sinh" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+            <!-- LEFT: Video Grid (giống meeting) -->
+            <VBox spacing="10" prefWidth="600" style="-fx-background-color: #1E1E1E;">
+                <Label text="📹 Video" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
                 <GridPane fx:id="videoGrid" hgap="10" vgap="10"
                           style="-fx-background-color: #1E1E1E;"
                           VBox.vgrow="ALWAYS">
@@ -43,33 +42,17 @@
                     </rowConstraints>
                 </GridPane>
             </VBox>
-            
-            <!-- Student: 2 cameras (proctor + preview) -->
-            <VBox fx:id="studentVideoSection" spacing="10" prefWidth="600" style="-fx-background-color: #1E1E1E;">
-                <!-- Proctor Camera -->
-                <VBox spacing="5" VBox.vgrow="ALWAYS">
-                    <Label text="📹 Camera giám thị" style="-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
-                    <VBox fx:id="proctorVideoContainer" alignment="CENTER" VBox.vgrow="ALWAYS"
-                          style="-fx-background-color: #000000; -fx-background-radius: 10;"
-                          minHeight="300">
-                        <Label text="Đang tải camera giám thị..." style="-fx-text-fill: #808080;"/>
-                    </VBox>
-                </VBox>
-                
-                <!-- My Camera Preview -->
-                <VBox spacing="5" VBox.vgrow="ALWAYS">
-                    <Label text="📷 Camera của bạn" style="-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;"/>
-                    <VBox fx:id="myVideoContainer" alignment="CENTER" VBox.vgrow="ALWAYS"
-                          style="-fx-background-color: #000000; -fx-background-radius: 10;"
-                          minHeight="300">
-                        <Label text="Đang tải camera của bạn..." style="-fx-text-fill: #808080;"/>
-                    </VBox>
-                </VBox>
-            </VBox>
 
             <!-- RIGHT: Exam Questions Panel -->
             <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #2C2C2C; -fx-padding: 15; -fx-background-radius: 10;">
-                <Label text="📝 Câu hỏi" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="📝 Bài kiểm tra" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="addQuestionButton" text="➕ Thêm câu hỏi" onAction="#handleAddQuestion"
+                            style="-fx-background-color: #1976D2; -fx-text-fill: white;
+                                   -fx-pref-width: 130; -fx-pref-height: 35; -fx-background-radius: 5;
+                                   -fx-font-size: 13;"/>
+                </HBox>
                 
                 <ScrollPane fx:id="questionsScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
                             style="-fx-background-color: #1E1E1E; -fx-background-radius: 5;">

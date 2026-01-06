@@ -32,15 +32,12 @@ public class ExamRoomController {
     @FXML private Label examTitleLabel;
     @FXML private Label timerLabel;
     @FXML private Label cameraStatusLabel;
-    @FXML private VBox proctorVideoSection;    // Section cho proctor (grid view)
-    @FXML private VBox studentVideoSection;     // Section cho student (2 cameras)
-    @FXML private GridPane videoGrid;           // Grid view cho proctor
-    @FXML private VBox proctorVideoContainer;  // Camera của proctor (cho student)
-    @FXML private VBox myVideoContainer;        // Preview camera của chính mình
+    @FXML private GridPane videoGrid;           // Grid view (giống meeting)
     @FXML private ScrollPane questionsScrollPane;
     @FXML private VBox questionsContainer;
     @FXML private Button submitButton;
     @FXML private Button leaveButton;
+    @FXML private Button addQuestionButton;     // Chỉ proctor mới có
 
     @Getter private Exam exam;
     @Getter private ExamParticipant myParticipant;
@@ -48,15 +45,9 @@ public class ExamRoomController {
 
     private ExamService examService;
     private ExamStreamManager examStreamManager;
-    private VideoPanel proctorVideoPanel;  // Video panel cho proctor (student view)
-    private VideoPanel myVideoPanel;       // Video panel cho preview của chính mình
     
-    // Proctor: Map để quản lý video panels của students
-    private Map<String, VideoPanel> studentVideoPanels = new ConcurrentHashMap<>();
-    
-    // Throttling cho preview để tránh UI bị đơ
-    private long lastPreviewUpdate = 0;
-    private static final long PREVIEW_UPDATE_INTERVAL = 33; // ~30 FPS (33ms)
+    // Video panels (giống meeting)
+    private Map<String, VideoPanel> videoPanels = new ConcurrentHashMap<>();
 
     // Exam state
     private List<Question> questions;
@@ -90,33 +81,24 @@ public class ExamRoomController {
         cameraStatusLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 13;");
 
         // 2. Setup UI theo role
+        setupVideoGrid();
+        
         if (isProctor) {
-            // Proctor: Hiển thị grid view, ẩn student section
-            proctorVideoSection.setManaged(true);
-            proctorVideoSection.setVisible(true);
-            studentVideoSection.setManaged(false);
-            studentVideoSection.setVisible(false);
-            
             submitButton.setVisible(false);
+            addQuestionButton.setVisible(true);
+            addQuestionButton.setText("➕ Thêm câu hỏi");
             leaveButton.setText("🛑 Kết thúc bài thi");
-            setupVideoGrid();
-        } else {
-            // Student: Hiển thị 2 cameras, ẩn grid view
-            proctorVideoSection.setManaged(false);
-            proctorVideoSection.setVisible(false);
-            studentVideoSection.setManaged(true);
-            studentVideoSection.setVisible(true);
             
-            submitButton.setVisible(true);
-            submitButton.setText("📤 Nộp bài");
-            leaveButton.setText("📞 Rời phòng thi");
-        }
-
-        // 3. Load questions (chỉ student mới cần)
-        if (!isProctor) {
+            // Proctor: Load questions để xem/quản lý
             loadQuestions();
         } else {
-            questionsContainer.getChildren().add(new Label("Bạn là giám thị. Camera của bạn đang được gửi đến tất cả thí sinh."));
+            submitButton.setVisible(true);
+            submitButton.setText("📤 Nộp bài");
+            addQuestionButton.setVisible(false);
+            leaveButton.setText("📞 Rời phòng thi");
+            
+            // Student: Load questions để làm bài
+            loadQuestions();
         }
 
         // 4. Bắt đầu timer
@@ -176,13 +158,8 @@ public class ExamRoomController {
 
             examStreamManager.start(
                     proctorPeer,
-                    // Callback Video
-                    (userId, image) -> Platform.runLater(() -> updateVideoPanel(userId, image)),
-                    // Callback Chat
-                    (senderId, message) -> Platform.runLater(() -> {
-                        // Chat logic (có thể thêm sau)
-                        log.info("📥 Chat from {}: {}", senderId, message);
-                    })
+                    // Callback Video (không có chat)
+                    (userId, image) -> Platform.runLater(() -> updateVideoPanel(userId, image))
             );
 
             // Camera bắt buộc ON
@@ -199,75 +176,35 @@ public class ExamRoomController {
 
     private void updateVideoPanel(String userId, Image image) {
         Platform.runLater(() -> {
-            String currentUserId = RMIClient.getInstance().getMyPeer().getUserId();
-            String proctorId = exam.getProctorId();
-            
-            if (isProctor) {
-                // PROCTOR: Hiển thị tất cả students trong grid view
-                if (!userId.equals(currentUserId)) {
-                    // Video từ student
-                    VideoPanel panel = studentVideoPanels.get(userId);
-                    if (panel == null) {
-                        String studentName = participantNames.getOrDefault(userId, "Student " + userId.substring(0, 8));
-                        panel = new VideoPanel(userId, studentName);
-                        studentVideoPanels.put(userId, panel);
-                        
-                        // Thêm vào grid
-                        int index = studentVideoPanels.size() - 1;
-                        videoGrid.add(panel, index % 2, index / 2);
-                    }
-                    panel.updateFrame(image);
+            VideoPanel panel = videoPanels.get(userId);
+            if (panel == null) {
+                // Lấy tên từ participantNames hoặc exam
+                String name;
+                if (userId.equals(exam.getProctorId())) {
+                    name = exam.getProctorName();
                 } else {
-                    // Preview của chính mình - có thể thêm vào grid nếu muốn
-                    // Hoặc bỏ qua vì proctor không cần xem chính mình
+                    name = participantNames.getOrDefault(userId, 
+                            userId.equals(RMIClient.getInstance().getMyPeer().getUserId()) 
+                                    ? "Bạn" 
+                                    : "Student " + userId.substring(0, 8));
                 }
-            } else {
-                // STUDENT: Hiển thị 2 cameras (proctor + preview)
-                if (userId.equals(currentUserId)) {
-                    // PREVIEW: Camera của chính mình (throttle để tránh UI bị đơ)
-                    long now = System.currentTimeMillis();
-                    if (now - lastPreviewUpdate < PREVIEW_UPDATE_INTERVAL) {
-                        return; // Skip frame nếu quá nhanh
-                    }
-                    lastPreviewUpdate = now;
-                    
-                    if (myVideoPanel == null) {
-                        myVideoPanel = new VideoPanel(userId, "Bạn");
-                        myVideoContainer.getChildren().clear();
-                        myVideoContainer.getChildren().add(myVideoPanel);
-                        log.info("✅ Created my video panel for preview");
-                    }
-                    try {
-                        myVideoPanel.updateFrame(image);
-                    } catch (Exception e) {
-                        log.error("Error updating preview frame", e);
-                    }
-                    
-                } else if (userId.equals(proctorId)) {
-                    // PROCTOR VIDEO: Camera của proctor
-                    if (proctorVideoPanel == null) {
-                        String proctorName = exam.getProctorName();
-                        proctorVideoPanel = new VideoPanel(userId, proctorName);
-                        proctorVideoContainer.getChildren().clear();
-                        proctorVideoContainer.getChildren().add(proctorVideoPanel);
-                        log.info("✅ Created proctor video panel: {}", proctorName);
-                    }
-                    try {
-                        proctorVideoPanel.updateFrame(image);
-                    } catch (Exception e) {
-                        log.error("Error updating proctor video frame", e);
-                    }
-                } else {
-                    log.debug("⚠️ Student received video from unknown user: {} (expected proctor: {})", 
-                            userId, proctorId);
-                }
+
+                panel = new VideoPanel(userId, name);
+                videoPanels.put(userId, panel);
+
+                // Thêm vào grid
+                int index = videoPanels.size() - 1;
+                videoGrid.add(panel, index % 2, index / 2);
             }
+
+            // Cập nhật hình ảnh
+            panel.updateFrame(image);
         });
     }
     
     private void setupVideoGrid() {
         videoGrid.getChildren().clear();
-        studentVideoPanels.clear();
+        videoPanels.clear();
         // Grid sẽ tự động thêm video panels khi có dữ liệu
     }
 
@@ -308,42 +245,100 @@ public class ExamRoomController {
         Label questionNumberLabel = new Label("Câu " + questionNumber + " (" + question.getPoints() + " điểm):");
         questionNumberLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 14; -fx-font-weight: bold;");
         headerBox.getChildren().add(questionNumberLabel);
+        
+        if (isProctor) {
+            // Proctor: Hiển thị đáp án đúng
+            if (question.getCorrectAnswerId() != null) {
+                String correctAnswer = question.getAnswers().stream()
+                        .filter(a -> a.getAnswerId().equals(question.getCorrectAnswerId()))
+                        .findFirst()
+                        .map(a -> a.getAnswerLabel() + ". " + a.getAnswerText())
+                        .orElse("N/A");
+                Label correctLabel = new Label("✓ Đáp án đúng: " + correctAnswer);
+                correctLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 12;");
+                headerBox.getChildren().add(correctLabel);
+            }
+        }
 
         // Question text
         Label questionTextLabel = new Label(question.getQuestionText());
         questionTextLabel.setWrapText(true);
         questionTextLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13;");
 
-        // Answer options (RadioButtons)
-        ToggleGroup answerGroup = new ToggleGroup();
+        // Answer options
         VBox answersBox = new VBox(8);
         answersBox.setSpacing(8);
 
-        for (int i = 0; i < question.getAnswers().size(); i++) {
-            var answer = question.getAnswers().get(i);
-            RadioButton radioButton = new RadioButton(answer.getAnswerLabel() + ". " + answer.getAnswerText());
-            radioButton.setToggleGroup(answerGroup);
-            radioButton.setUserData(answer.getAnswerId());
-            radioButton.setStyle("-fx-text-fill: white; -fx-font-size: 12;");
-            
-            // Load saved answer
-            StudentAnswer savedAnswer = studentAnswers.get(question.getQuestionId());
-            if (savedAnswer != null && answer.getAnswerId().equals(savedAnswer.getSelectedAnswerId())) {
-                radioButton.setSelected(true);
-            }
-
-            // Save answer when selected
-            radioButton.selectedProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal) {
-                    saveAnswer(question, answer.getAnswerId());
+        if (isProctor) {
+            // Proctor: Chỉ xem (không cho chọn)
+            for (var answer : question.getAnswers()) {
+                Label answerLabel = new Label(answer.getAnswerLabel() + ". " + answer.getAnswerText());
+                answerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12;");
+                if (answer.getAnswerId().equals(question.getCorrectAnswerId())) {
+                    answerLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 12; -fx-font-weight: bold;");
                 }
-            });
+                answersBox.getChildren().add(answerLabel);
+            }
+        } else {
+            // Student: RadioButtons để chọn đáp án
+            ToggleGroup answerGroup = new ToggleGroup();
+            for (int i = 0; i < question.getAnswers().size(); i++) {
+                var answer = question.getAnswers().get(i);
+                RadioButton radioButton = new RadioButton(answer.getAnswerLabel() + ". " + answer.getAnswerText());
+                radioButton.setToggleGroup(answerGroup);
+                radioButton.setUserData(answer.getAnswerId());
+                radioButton.setStyle("-fx-text-fill: white; -fx-font-size: 12;");
+                
+                // Load saved answer
+                StudentAnswer savedAnswer = studentAnswers.get(question.getQuestionId());
+                if (savedAnswer != null && answer.getAnswerId().equals(savedAnswer.getSelectedAnswerId())) {
+                    radioButton.setSelected(true);
+                }
 
-            answersBox.getChildren().add(radioButton);
+                // Save answer when selected
+                radioButton.selectedProperty().addListener((obs, oldVal, newVal) -> {
+                    if (newVal) {
+                        saveAnswer(question, answer.getAnswerId());
+                    }
+                });
+
+                answersBox.getChildren().add(radioButton);
+            }
         }
 
         questionBox.getChildren().addAll(headerBox, questionTextLabel, answersBox);
         return questionBox;
+    }
+    
+    @FXML
+    private void handleAddQuestion() {
+        if (!isProctor) return;
+        
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/add-question-dialog.fxml")
+            );
+            
+            javafx.stage.Stage dialog = new javafx.stage.Stage();
+            dialog.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            dialog.setTitle("Thêm Câu Hỏi");
+            dialog.setScene(new javafx.scene.Scene(loader.load(), 600, 500));
+            
+            AddQuestionDialogController controller = loader.getController();
+            controller.setExamId(exam.getExamId());
+            controller.setOnQuestionAdded(this::onQuestionAdded);
+            
+            dialog.showAndWait();
+            
+        } catch (Exception e) {
+            log.error("Failed to open add question dialog", e);
+            showError("Không thể mở dialog thêm câu hỏi!");
+        }
+    }
+    
+    private void onQuestionAdded(Question question) {
+        loadQuestions(); // Reload questions
+        showInfo("Câu hỏi đã được thêm thành công!");
     }
 
     private void saveAnswer(Question question, String selectedAnswerId) {

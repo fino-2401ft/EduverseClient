@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.eduverseclient.controller.AddQuestionDialogController"
+      spacing="15"
+      style="-fx-background-color: white; -fx-padding: 20;">
+
+    <Label text="Thêm Câu Hỏi Mới" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+    <Separator/>
+
+    <Label text="Nội dung câu hỏi:"/>
+    <TextArea fx:id="questionTextArea" promptText="Nhập nội dung câu hỏi..." 
+              prefRowCount="3" wrapText="true"/>
+
+    <Label text="Đáp án:"/>
+    <VBox spacing="8">
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="A:" prefWidth="30"/>
+            <TextField fx:id="answerAField" promptText="Đáp án A" HBox.hgrow="ALWAYS"/>
+        </HBox>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="B:" prefWidth="30"/>
+            <TextField fx:id="answerBField" promptText="Đáp án B" HBox.hgrow="ALWAYS"/>
+        </HBox>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="C:" prefWidth="30"/>
+            <TextField fx:id="answerCField" promptText="Đáp án C" HBox.hgrow="ALWAYS"/>
+        </HBox>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="D:" prefWidth="30"/>
+            <TextField fx:id="answerDField" promptText="Đáp án D" HBox.hgrow="ALWAYS"/>
+        </HBox>
+    </VBox>
+
+    <HBox spacing="15">
+        <VBox spacing="5">
+            <Label text="Đáp án đúng:"/>
+            <ComboBox fx:id="correctAnswerCombo" prefWidth="100"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="Điểm:"/>
+            <Spinner fx:id="pointsSpinner" prefWidth="100"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="Thứ tự:"/>
+            <Spinner fx:id="orderSpinner" prefWidth="100"/>
+        </VBox>
+    </HBox>
+
+    <Separator/>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Hủy" onAction="#handleCancel"
+                style="-fx-background-color: #757575; -fx-text-fill: white;"/>
+        <Button text="Thêm" onAction="#handleAdd"
+                style="-fx-background-color: #1976D2; -fx-text-fill: white;"/>
+    </HBox>
+
+</VBox>
+
