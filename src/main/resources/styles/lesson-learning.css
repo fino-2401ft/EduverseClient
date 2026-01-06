@@ -1,0 +1,372 @@
+/* Lesson Learning Container */
+.lesson-learning-container {
+    -fx-background-color: #1c1d1f;
+}
+
+/* Top Navigation Bar */
+.lesson-navbar {
+    -fx-background-color: #1c1d1f;
+    -fx-border-color: transparent transparent #3e4143 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.back-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-padding: 8px 16px;
+}
+
+.back-button:hover {
+    -fx-background-color: #3e4143;
+    -fx-background-radius: 4px;
+}
+
+.navbar-course-title {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.progress-text {
+    -fx-text-fill: #d1d7dc;
+    -fx-font-size: 14px;
+}
+
+.lesson-progress-bar {
+    -fx-pref-height: 8px;
+}
+
+.lesson-progress-bar .track {
+    -fx-background-color: #3e4143;
+    -fx-background-radius: 4px;
+}
+
+.lesson-progress-bar .bar {
+    -fx-background-color: #a435f0;
+    -fx-background-radius: 4px;
+    -fx-padding: 0;
+}
+
+/* Split Pane */
+.lesson-split-pane {
+    -fx-background-color: #1c1d1f;
+}
+
+.lesson-split-pane .split-pane-divider {
+    -fx-background-color: #3e4143;
+    -fx-padding: 0 1px 0 0;
+}
+
+/* Video Content Area */
+.video-content-area {
+    -fx-background-color: #1c1d1f;
+}
+
+.video-section {
+    -fx-background-color: black;
+    -fx-alignment: center;
+}
+
+.video-player {
+    -fx-background-color: black;
+}
+
+/* Content Tabs */
+.content-tabs {
+    -fx-background-color: #1c1d1f;
+}
+
+.content-tabs .tab-header-area {
+    -fx-background-color: #1c1d1f;
+    -fx-border-color: transparent transparent #3e4143 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.content-tabs .tab {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.content-tabs .tab-label {
+    -fx-text-fill: #d1d7dc;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 24px;
+}
+
+.content-tabs .tab:selected {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #a435f0 transparent;
+    -fx-border-width: 0 0 3px 0;
+}
+
+.content-tabs .tab:selected .tab-label {
+    -fx-text-fill: white;
+}
+
+.content-tabs .tab:hover {
+    -fx-background-color: #2d2f31;
+}
+
+.tab-scroll {
+    -fx-background-color: #1c1d1f;
+}
+
+.tab-scroll .viewport {
+    -fx-background-color: #1c1d1f;
+}
+
+.tab-content {
+    -fx-background-color: #1c1d1f;
+}
+
+/* Lesson Content Styles */
+.lesson-title-large {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-wrap-text: true;
+}
+
+.section-header {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.lesson-description {
+    -fx-font-size: 16px;
+    -fx-text-fill: #d1d7dc;
+    -fx-line-spacing: 3px;
+}
+
+.lesson-content {
+    -fx-font-size: 15px;
+    -fx-text-fill: #d1d7dc;
+    -fx-line-spacing: 4px;
+}
+
+/* Resources */
+.resource-item {
+    -fx-background-color: #2d2f31;
+    -fx-padding: 15px 20px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.resource-item:hover {
+    -fx-background-color: #3e4143;
+}
+
+.resource-name {
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.resource-size {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9da3a7;
+}
+
+/* Notes Area */
+.notes-area {
+    -fx-background-color: #2d2f31;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-border-color: #3e4143;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-prompt-text-fill: #6a6f73;
+}
+
+.notes-area:focused {
+    -fx-border-color: #a435f0;
+    -fx-border-width: 2px;
+}
+
+.save-notes-button {
+    -fx-background-color: #a435f0;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 24px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+
+.save-notes-button:hover {
+    -fx-background-color: #8710d8;
+}
+
+/* Lesson Sidebar */
+.lesson-sidebar {
+    -fx-background-color: #2d2f31;
+}
+
+.sidebar-header {
+    -fx-background-color: #2d2f31;
+    -fx-border-color: transparent transparent #3e4143 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.sidebar-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.sidebar-count {
+    -fx-font-size: 14px;
+    -fx-text-fill: #9da3a7;
+}
+
+.sidebar-scroll {
+    -fx-background-color: #2d2f31;
+}
+
+.sidebar-scroll .viewport {
+    -fx-background-color: #2d2f31;
+}
+
+.lesson-list-sidebar {
+    -fx-background-color: #2d2f31;
+}
+
+/* Sidebar Lesson Item */
+.sidebar-lesson-item {
+    -fx-background-color: #2d2f31;
+    -fx-padding: 15px 20px;
+    -fx-border-color: transparent transparent #3e4143 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-cursor: hand;
+}
+
+.sidebar-lesson-item:hover {
+    -fx-background-color: #3e4143;
+}
+
+.sidebar-lesson-item.current {
+    -fx-background-color: #1c1d1f;
+    -fx-border-color: transparent transparent transparent #a435f0;
+    -fx-border-width: 0 0 0 4px;
+}
+
+.sidebar-lesson-item.completed {
+    -fx-background-color: rgba(164, 53, 240, 0.1);
+}
+
+.sidebar-lesson-number {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9da3a7;
+    -fx-font-weight: bold;
+}
+
+.sidebar-lesson-title {
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-wrap-text: true;
+}
+
+.sidebar-lesson-duration {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9da3a7;
+}
+
+.sidebar-lesson-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: #5cb85c;
+    -fx-font-weight: bold;
+}
+
+/* Action Bar */
+.action-bar {
+    -fx-background-color: #2d2f31;
+    -fx-border-color: #3e4143 transparent transparent transparent;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.nav-button {
+    -fx-background-color: #3e4143;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 24px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+
+.nav-button:hover {
+    -fx-background-color: #505357;
+}
+
+.nav-button:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+.nav-button-primary {
+    -fx-background-color: #0056d2;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 24px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+
+.nav-button-primary:hover {
+    -fx-background-color: #003d99;
+}
+
+.nav-button-primary:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+.complete-button {
+    -fx-background-color: #5cb85c;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 30px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+
+.complete-button:hover {
+    -fx-background-color: #4cae4c;
+}
+
+.complete-button.completed {
+    -fx-background-color: #3e4143;
+    -fx-text-fill: #9da3a7;
+}
+
+/* Scrollbar Styling */
+.tab-scroll .scroll-bar:vertical,
+.sidebar-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.tab-scroll .scroll-bar:vertical .thumb,
+.sidebar-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #505357;
+    -fx-background-radius: 5px;
+}
+
+.tab-scroll .scroll-bar:vertical .thumb:hover,
+.sidebar-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #6a6f73;
+}
+
+.tab-scroll .scroll-bar:vertical .increment-button,
+.tab-scroll .scroll-bar:vertical .decrement-button,
+.sidebar-scroll .scroll-bar:vertical .increment-button,
+.sidebar-scroll .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}

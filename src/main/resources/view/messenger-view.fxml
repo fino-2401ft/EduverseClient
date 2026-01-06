@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.MessengerController"
+            style="-fx-background-color: #F0F2F5;">
+
+    <!-- LEFT PANEL -->
+    <left>
+        <VBox style="-fx-background-color: #FFFFFF; -fx-pref-width: 280;" spacing="0">
+            
+            <!-- Header: App Title -->
+            <HBox alignment="CENTER_LEFT" style="-fx-padding: 15; -fx-background-color: #FFFFFF;">
+                <Label fx:id="appTitleLabel" text="📚 EDUVERSE" 
+                       style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1976D2;"/>
+            </HBox>
+            
+            <Separator/>
+            
+            <!-- Tabs -->
+            <HBox spacing="0" style="-fx-padding: 0;">
+                <Button fx:id="privateTabButton" text="Private Chat" 
+                        style="-fx-pref-width: 140; -fx-pref-height: 40; -fx-background-color: transparent; -fx-font-size: 14;"
+                        onAction="#switchToPrivateChat"/>
+                <Button fx:id="courseTabButton" text="Course Chat"
+                        style="-fx-pref-width: 140; -fx-pref-height: 40; -fx-background-color: transparent; -fx-font-size: 14;"
+                        onAction="#switchToCourseChat"/>
+            </HBox>
+            
+            <Separator/>
+            
+            <!-- Search Bar -->
+            <VBox style="-fx-padding: 10;" spacing="5">
+                <TextField fx:id="userSearchField" 
+                          promptText="🔍 Tìm kiếm user..."
+                          style="-fx-background-color: #F0F2F5; -fx-background-radius: 20; -fx-padding: 8 15;"
+                          onKeyReleased="#onSearchUser"/>
+            </VBox>
+            
+            <Separator/>
+            
+            <!-- User Search Results / Conversation List -->
+            <ScrollPane fx:id="conversationListScrollPane" 
+                       style="-fx-background-color: transparent; -fx-border-width: 0;"
+                       fitToWidth="true"
+                       vbarPolicy="AS_NEEDED">
+                <VBox fx:id="conversationListBox" 
+                      spacing="2" 
+                      style="-fx-padding: 5; -fx-background-color: #FFFFFF;"/>
+            </ScrollPane>
+            
+        </VBox>
+    </left>
+    
+    <!-- RIGHT PANEL -->
+    <center>
+        <BorderPane style="-fx-background-color: #F0F2F5;">
+            
+            <!-- Conversation Header -->
+            <top>
+                <HBox fx:id="conversationHeader" 
+                      alignment="CENTER_LEFT" 
+                      style="-fx-background-color: #FFFFFF; -fx-padding: 10;"
+                      spacing="10">
+                    
+                    <ImageView fx:id="conversationAvatarImage" 
+                               fitWidth="40" 
+                               fitHeight="40"
+                               style="-fx-background-radius: 20;"/>
+                    
+                    <VBox spacing="2">
+                        <Label fx:id="conversationNameLabel" 
+                               text="Select a conversation"
+                               style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+                        <Label fx:id="conversationStatusLabel" 
+                               text=""
+                               style="-fx-font-size: 12; -fx-text-fill: #666;"/>
+                    </VBox>
+                    
+                    <Region HBox.hgrow="ALWAYS"/>
+                    
+                    <Button fx:id="optionsButton" text="☰" 
+                            style="-fx-background-color: transparent; -fx-font-size: 18;"/>
+                    
+                </HBox>
+            </top>
+            
+            <!-- Messages Area -->
+            <center>
+                <ScrollPane fx:id="messagesScrollPane" 
+                           style="-fx-background-color: #F0F2F5; -fx-border-width: 0;"
+                           fitToWidth="true"
+                           vbarPolicy="AS_NEEDED"
+                           vvalue="1.0">
+                    <VBox fx:id="messagesBox" 
+                          spacing="5" 
+                          style="-fx-padding: 10; -fx-background-color: #F0F2F5;"/>
+                </ScrollPane>
+            </center>
+            
+            <!-- Input Area -->
+            <bottom>
+                <HBox alignment="CENTER_LEFT" 
+                      style="-fx-background-color: #FFFFFF; -fx-padding: 10;"
+                      spacing="10">
+                    
+                    <Button fx:id="emojiButton" text="😊" 
+                            style="-fx-background-color: transparent; -fx-font-size: 20;"/>
+                    
+                    <Button fx:id="attachmentButton" text="📎" 
+                            style="-fx-background-color: transparent; -fx-font-size: 20;"
+                            onAction="#selectFile"/>
+                    
+                    <TextField fx:id="messageField" 
+                               promptText="Type a message..."
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: #F0F2F5; -fx-background-radius: 20; -fx-padding: 10;"/>
+                    
+                    <Button fx:id="sendButton" text="Send" 
+                            style="-fx-background-color: #0084FF; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 10 20;"
+                            onAction="#sendMessage"/>
+                    
+                </HBox>
+            </bottom>
+            
+        </BorderPane>
+    </center>
+    
+</BorderPane>
+

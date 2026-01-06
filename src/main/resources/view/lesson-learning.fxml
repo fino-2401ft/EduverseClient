@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
+<?import java.net.URL?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.eduverseclient.controller.LessonLearningController"
+            styleClass="lesson-learning-container">
+
+    <!-- Top Navigation Bar -->
+    <top>
+        <HBox styleClass="lesson-navbar" spacing="15" alignment="CENTER_LEFT">
+            <padding>
+                <Insets top="12" bottom="12" left="20" right="20"/>
+            </padding>
+
+            <!-- Back Button -->
+            <Button fx:id="backButton"
+                    text="← Back to Course"
+                    styleClass="back-button"
+                    onAction="#handleBackToCourse"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Course Title -->
+            <Label fx:id="courseTitleLabel"
+                   text="Course Title"
+                   styleClass="navbar-course-title"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Progress Info -->
+            <HBox spacing="10" alignment="CENTER">
+                <Label fx:id="progressLabel"
+                       text="0/0 completed"
+                       styleClass="progress-text"/>
+                <ProgressBar fx:id="progressBar"
+                             progress="0"
+                             prefWidth="120"
+                             styleClass="lesson-progress-bar"/>
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <SplitPane dividerPositions="0.65" styleClass="lesson-split-pane">
+
+            <!-- Left Side - Video and Content -->
+            <VBox spacing="0" styleClass="video-content-area">
+
+                <!-- Video Player Section -->
+                <VBox styleClass="video-section">
+                    <WebView fx:id="videoWebView"
+                             prefHeight="480"
+                             styleClass="video-player"/>
+                </VBox>
+
+                <!-- Tabs for Content -->
+                <TabPane fx:id="contentTabPane"
+                         styleClass="content-tabs"
+                         VBox.vgrow="ALWAYS">
+
+                    <!-- Overview Tab -->
+                    <Tab text="Overview" closable="false">
+                        <ScrollPane fitToWidth="true" styleClass="tab-scroll">
+                            <VBox spacing="20" styleClass="tab-content">
+                                <padding>
+                                    <Insets top="30" bottom="30" left="40" right="40"/>
+                                </padding>
+
+                                <!-- Lesson Title -->
+                                <Label fx:id="lessonTitleLabel"
+                                       text="Lesson Title"
+                                       styleClass="lesson-title-large"/>
+
+                                <!-- Lesson Description -->
+                                <VBox spacing="10">
+                                    <Label text="About this lesson"
+                                           styleClass="section-header"/>
+                                    <Label fx:id="lessonDescriptionLabel"
+                                           text="Lesson description..."
+                                           wrapText="true"
+                                           styleClass="lesson-description"/>
+                                </VBox>
+
+                                <!-- Lesson Content -->
+                                <VBox spacing="10">
+                                    <Label text="Content"
+                                           styleClass="section-header"/>
+                                    <Label fx:id="lessonContentLabel"
+                                           text="Lesson content..."
+                                           wrapText="true"
+                                           styleClass="lesson-content"/>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                    </Tab>
+
+                    <!-- Resources Tab -->
+                    <Tab text="Resources" closable="false">
+                        <ScrollPane fitToWidth="true" styleClass="tab-scroll">
+                            <VBox spacing="15" styleClass="tab-content">
+                                <padding>
+                                    <Insets top="30" bottom="30" left="40" right="40"/>
+                                </padding>
+
+                                <Label text="Downloadable Resources"
+                                       styleClass="section-header"/>
+
+                                <VBox fx:id="resourcesContainer"
+                                      spacing="10">
+                                    <!-- Resources will be added dynamically -->
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                    </Tab>
+
+                    <!-- Notes Tab -->
+                    <Tab text="Notes" closable="false">
+                        <ScrollPane fitToWidth="true" styleClass="tab-scroll">
+                            <VBox spacing="15" styleClass="tab-content">
+                                <padding>
+                                    <Insets top="30" bottom="30" left="40" right="40"/>
+                                </padding>
+
+                                <Label text="Your Notes"
+                                       styleClass="section-header"/>
+
+                                <TextArea fx:id="notesTextArea"
+                                          promptText="Take notes while learning..."
+                                          wrapText="true"
+                                          prefRowCount="10"
+                                          styleClass="notes-area"/>
+
+                                <Button text="Save Notes"
+                                        styleClass="save-notes-button"
+                                        onAction="#handleSaveNotes"/>
+                            </VBox>
+                        </ScrollPane>
+                    </Tab>
+                </TabPane>
+            </VBox>
+
+            <!-- Right Side - Lesson List -->
+            <VBox spacing="0" styleClass="lesson-sidebar">
+
+                <!-- Sidebar Header -->
+                <HBox styleClass="sidebar-header"
+                      alignment="CENTER_LEFT"
+                      spacing="10">
+                    <padding>
+                        <Insets top="20" bottom="20" left="20" right="20"/>
+                    </padding>
+
+                    <Label text="Course Content"
+                           styleClass="sidebar-title"/>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Label fx:id="lessonCountLabel"
+                           text="0 lessons"
+                           styleClass="sidebar-count"/>
+                </HBox>
+
+                <!-- Lesson List -->
+                <ScrollPane fitToWidth="true"
+                            styleClass="sidebar-scroll"
+                            VBox.vgrow="ALWAYS">
+                    <VBox fx:id="lessonListContainer"
+                          spacing="0"
+                          styleClass="lesson-list-sidebar">
+                        <!-- Lessons will be added dynamically -->
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+
+        </SplitPane>
+    </center>
+
+    <!-- Bottom Action Bar -->
+    <bottom>
+        <HBox styleClass="action-bar"
+              spacing="15"
+              alignment="CENTER">
+            <padding>
+                <Insets top="15" bottom="15" left="30" right="30"/>
+            </padding>
+
+            <!-- Previous Button -->
+            <Button fx:id="previousButton"
+                    text="← Previous Lesson"
+                    styleClass="nav-button"
+                    onAction="#handlePreviousLesson"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Mark Complete Button -->
+            <Button fx:id="completeButton"
+                    text="Mark as Complete"
+                    styleClass="complete-button"
+                    onAction="#handleMarkComplete"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Next Button -->
+            <Button fx:id="nextButton"
+                    text="Next Lesson →"
+                    styleClass="nav-button-primary"
+                    onAction="#handleNextLesson"/>
+        </HBox>
+    </bottom>
+
+    <stylesheets>
+        <URL value="@../styles/lesson-learning.css"/>
+    </stylesheets>
+</BorderPane>
