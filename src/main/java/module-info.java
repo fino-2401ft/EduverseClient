@@ -12,7 +12,8 @@ module org.example.eduverseclient {
     requires webcam.capture;
     requires cloudinary.core;
     requires javafx.web;  // Cho SwingFXUtils
-    requires java.net.http;  // Cho HttpClient (không cần Gson/Jackson vì dùng manual JSON parsing)
+    requires java.net.http;
+    requires com.google.gson;  // Cho HttpClient (không cần Gson/Jackson vì dùng manual JSON parsing)
 
     opens org.example.eduverseclient to javafx.fxml;
     exports org.example.eduverseclient;
