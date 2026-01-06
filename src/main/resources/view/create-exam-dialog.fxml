@@ -40,6 +40,15 @@
 
     <Separator/>
 
+    <Label text="Câu hỏi:" style="-fx-font-weight: bold;"/>
+    <ScrollPane fx:id="questionsScrollPane" prefHeight="200" fitToWidth="true">
+        <VBox fx:id="questionsContainer" spacing="10" style="-fx-padding: 10;"/>
+    </ScrollPane>
+    <Button text="➕ Thêm câu hỏi" onAction="#handleAddQuestion"
+            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+
+    <Separator/>
+
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="Hủy" onAction="#handleCancel"

@@ -338,7 +338,6 @@ public class ExamRoomController {
     
     private void onQuestionAdded(Question question) {
         loadQuestions(); // Reload questions
-        showInfo("Câu hỏi đã được thêm thành công!");
     }
 
     private void saveAnswer(Question question, String selectedAnswerId) {

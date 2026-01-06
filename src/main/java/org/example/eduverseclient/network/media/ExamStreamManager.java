@@ -104,12 +104,13 @@ public class ExamStreamManager {
             videoReceiver = new UDPVideoReceiver(videoSocket);
 
             videoReceiver.start((senderId, receivedImage) -> {
-                // Nhận video và hiển thị
+                // Nhận video và hiển thị (cho cả proctor và student)
                 if (videoCallback != null) {
                     videoCallback.accept(senderId, receivedImage);
                 }
-                // Proctor forward video đến tất cả participants khác
-                if (isProctor) {
+                // Proctor forward video từ students đến tất cả participants khác
+                // (không forward video của chính mình)
+                if (isProctor && !senderId.equals(myPeer.getUserId())) {
                     forwardVideoToOthers(senderId, receivedImage);
                 }
             });
@@ -118,6 +119,7 @@ public class ExamStreamManager {
                     frameData -> {
                         if (isProctor) {
                             // PROCTOR: Broadcast camera của mình đến TẤT CẢ students
+                            updatePeerList(); // Update peer list trước khi gửi
                             if (otherPeers != null && !otherPeers.isEmpty() && videoSender != null) {
                                 otherPeers.forEach(peer -> {
                                     try {
@@ -313,11 +315,28 @@ public class ExamStreamManager {
     // --- DATA SENDING METHODS ---
 
     private void sendFrameToProctor(byte[] frameData) {
+        // Nếu chưa có proctorPeer, thử lấy lại
+        if (proctorPeer == null) {
+            try {
+                proctorPeer = RMIClient.getInstance().getExamService().getProctorPeer(examId);
+                if (proctorPeer != null) {
+                    log.debug("✅ Found proctor peer: {}", proctorPeer.getUserId());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to get proctor peer: {}", e.getMessage());
+            }
+        }
+        
         if (proctorPeer != null && videoSender != null) {
             try {
                 videoSender.sendFrame(frameData, proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
+                log.trace("📤 Sent frame to proctor: {}:{}", proctorPeer.getIpAddress(), proctorPeer.getVideoPort());
             } catch (Exception e) {
                 log.error("Failed to send frame to proctor: {}", e.getMessage());
+            }
+        } else {
+            if (proctorPeer == null) {
+                log.debug("⚠️ Cannot send frame: Proctor peer is null");
             }
         }
     }
@@ -335,39 +354,48 @@ public class ExamStreamManager {
     // --- FORWARDING METHODS ---
 
     private void forwardVideoToOthers(String senderId, Image receivedImage) {
-        updatePeerList();
+        updatePeerList(); // Đảm bảo có peer list mới nhất
         byte[] frameData = convertImageToBytes(receivedImage);
-        if (frameData == null) return;
+        if (frameData == null) {
+            log.warn("Failed to convert image to bytes for forwarding");
+            return;
+        }
 
-        forwardData(senderId, (peer) -> {
-            try {
-                videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
-            } catch (Exception e) {
-                log.error("Failed to forward video to {}: {}", peer.getUserId(), e.getMessage());
-            }
-        });
+        if (otherPeers == null || otherPeers.isEmpty()) {
+            log.debug("No peers to forward video to");
+            return;
+        }
+
+        // Forward đến tất cả participants khác (trừ sender và chính mình)
+        otherPeers.stream()
+                .filter(p -> p != null && !p.getUserId().equals(senderId) && !p.getUserId().equals(myPeer.getUserId()))
+                .forEach(peer -> {
+                    try {
+                        videoSender.sendFrame(frameData, peer.getIpAddress(), peer.getVideoPort());
+                        log.trace("📤 Forwarded video from {} to {}", senderId, peer.getUserId());
+                    } catch (Exception e) {
+                        log.error("Failed to forward video to {}: {}", peer.getUserId(), e.getMessage());
+                    }
+                });
     }
 
     private void forwardAudioToOthers(String senderId, byte[] audioData) {
         updatePeerList();
-        forwardData(senderId, (peer) -> {
-            try {
-                audioSender.sendAudio(audioData, peer.getIpAddress(), peer.getAudioPort());
-            } catch (Exception e) {
-                log.error("Failed to forward audio to {}: {}", peer.getUserId(), e.getMessage());
-            }
-        });
-    }
-
-    private void forwardData(String senderId, java.util.function.Consumer<Peer> action) {
         if (otherPeers == null || otherPeers.isEmpty()) {
             return;
         }
 
         otherPeers.stream()
                 .filter(p -> p != null && !p.getUserId().equals(senderId) && !p.getUserId().equals(myPeer.getUserId()))
-                .forEach(action);
+                .forEach(peer -> {
+                    try {
+                        audioSender.sendAudio(audioData, peer.getIpAddress(), peer.getAudioPort());
+                    } catch (Exception e) {
+                        log.error("Failed to forward audio to {}: {}", peer.getUserId(), e.getMessage());
+                    }
+                });
     }
+
 
     private byte[] convertImageToBytes(Image image) {
         try {

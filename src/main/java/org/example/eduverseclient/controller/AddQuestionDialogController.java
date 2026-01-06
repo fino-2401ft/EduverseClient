@@ -29,6 +29,7 @@ public class AddQuestionDialogController {
     private ExamService examService;
     private String examId;
     private Consumer<Question> onQuestionAdded;
+    private boolean isCreatingMode = false; // true if creating exam, false if adding to existing exam
     
     @FXML
     public void initialize() {
@@ -55,6 +56,10 @@ public class AddQuestionDialogController {
     
     public void setOnQuestionAdded(Consumer<Question> callback) {
         this.onQuestionAdded = callback;
+    }
+    
+    public void setCreatingMode(boolean creatingMode) {
+        this.isCreatingMode = creatingMode;
     }
     
     @FXML
@@ -107,7 +112,7 @@ public class AddQuestionDialogController {
         // Tạo question
         Question question = Question.builder()
                 .questionId(UUID.randomUUID().toString())
-                .examId(examId)
+                .examId(examId) // May be null if creating exam
                 .questionText(questionText)
                 .questionType("MULTIPLE_CHOICE")
                 .answers(answers)
@@ -116,22 +121,32 @@ public class AddQuestionDialogController {
                 .orderIndex(order)
                 .build();
         
-        // Thêm vào exam
-        new Thread(() -> {
-            boolean success = examService.addQuestion(examId, question);
-            
+        // Nếu đang tạo exam (examId == null), chỉ cần callback
+        if (examId == null || isCreatingMode) {
             Platform.runLater(() -> {
-                if (success) {
-                    log.info("✅ Question added: {}", question.getQuestionId());
-                    if (onQuestionAdded != null) {
-                        onQuestionAdded.accept(question);
-                    }
-                    closeDialog();
-                } else {
-                    showError("Không thể thêm câu hỏi!");
+                if (onQuestionAdded != null) {
+                    onQuestionAdded.accept(question);
                 }
+                closeDialog();
             });
-        }).start();
+        } else {
+            // Thêm vào exam đã tồn tại
+            new Thread(() -> {
+                boolean success = examService.addQuestion(examId, question);
+                
+                Platform.runLater(() -> {
+                    if (success) {
+                        log.info("✅ Question added: {}", question.getQuestionId());
+                        if (onQuestionAdded != null) {
+                            onQuestionAdded.accept(question);
+                        }
+                        closeDialog();
+                    } else {
+                        showError("Không thể thêm câu hỏi!");
+                    }
+                });
+            }).start();
+        }
     }
     
     @FXML
