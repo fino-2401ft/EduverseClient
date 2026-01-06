@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class AntiCheatService {
     private static AntiCheatService instance;
     private final HttpClient httpClient;
-    private static final String AI_SERVICE_URL = "http://127.0.0.1:8000/analyze/frame";
+    private static final String AI_SERVICE_URL = common.constant.AntiCheatConfig.AI_SERVICE_URL;
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
     private AntiCheatService() {
