@@ -66,8 +66,8 @@
                 
                 <!-- Violations Panel (chỉ cho proctor) -->
                 <ScrollPane fx:id="violationsScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
-                            style="-fx-background-color: #1E1E1E; -fx-background-radius: 5;" managed="false" visible="false">
-                    <VBox fx:id="violationsPanel" spacing="10" style="-fx-padding: 10;"/>
+                            style="-fx-background-color: #1E1E1E; -fx-background-radius: 5; -fx-pref-width: 800;" managed="false" visible="false">
+                    <VBox fx:id="violationsPanel" spacing="15" style="-fx-padding: 15;"/>
                 </ScrollPane>
                 
                 <!-- Questions Panel (chỉ cho student) -->

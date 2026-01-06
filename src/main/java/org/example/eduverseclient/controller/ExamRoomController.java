@@ -215,9 +215,13 @@ public class ExamRoomController {
         
         violationsPanel.getChildren().clear();
         
+        // Set padding và spacing lớn hơn cho violations panel
+        violationsPanel.setSpacing(15);
+        violationsPanel.setStyle("-fx-padding: 15;");
+        
         if (studentViolations.isEmpty()) {
             Label emptyLabel = new Label("Chưa có cảnh báo gian lận nào.");
-            emptyLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 14;");
+            emptyLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 16; -fx-padding: 20;");
             violationsPanel.getChildren().add(emptyLabel);
             return;
         }
@@ -237,7 +241,7 @@ public class ExamRoomController {
     private VBox createStudentViolationCard(String userId, String userName, 
                                            List<common.model.exam.Violation> violations, 
                                            double latestScore) {
-        VBox card = new VBox(8);
+        VBox card = new VBox(12);  // Tăng spacing từ 8 lên 12
         
         // Determine status color
         String borderColor = "#4CAF50"; // OK
@@ -250,20 +254,21 @@ public class ExamRoomController {
             statusText = "WARNING";
         }
         
+        // Tăng padding và border width
         card.setStyle(String.format(
-            "-fx-background-color: #2C2C2C; -fx-border-color: %s; -fx-border-width: 2; " +
-            "-fx-border-radius: 5; -fx-background-radius: 5; -fx-padding: 10;",
+            "-fx-background-color: #2C2C2C; -fx-border-color: %s; -fx-border-width: 3; " +
+            "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 15;",
             borderColor
         ));
         
         // Header: Student name + status
-        HBox header = new HBox(10);
+        HBox header = new HBox(15);  // Tăng spacing từ 10 lên 15
         Label nameLabel = new Label(userName);
-        nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;");
+        nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;");  // Tăng từ 14 lên 18
         
         Label statusLabel = new Label(statusText);
         statusLabel.setStyle(String.format(
-            "-fx-text-fill: %s; -fx-font-size: 12; -fx-font-weight: bold;",
+            "-fx-text-fill: %s; -fx-font-size: 16; -fx-font-weight: bold; -fx-padding: 5 10;",  // Tăng từ 12 lên 16
             borderColor
         ));
         
@@ -271,21 +276,22 @@ public class ExamRoomController {
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         
         Label scoreLabel = new Label(String.format("%.1f%%", latestScore * 100));
-        scoreLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12;");
+        scoreLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");  // Tăng từ 12 lên 16
         
         header.getChildren().addAll(nameLabel, spacer, statusLabel, scoreLabel);
         
-        // Progress bar for suspicion score
+        // Progress bar for suspicion score - tăng height
         ProgressBar scoreBar = new ProgressBar(latestScore);
         scoreBar.setPrefWidth(Double.MAX_VALUE);
+        scoreBar.setPrefHeight(25);  // Tăng height của progress bar
         scoreBar.setStyle(String.format(
-            "-fx-accent: %s;",
+            "-fx-accent: %s; -fx-background-color: #1E1E1E;",
             borderColor
         ));
         
         // Recent violations (last 3)
-        VBox violationsList = new VBox(5);
-        violationsList.setStyle("-fx-padding: 5;");
+        VBox violationsList = new VBox(8);  // Tăng spacing từ 5 lên 8
+        violationsList.setStyle("-fx-padding: 10;");  // Tăng padding từ 5 lên 10
         
         int count = Math.min(3, violations.size());
         for (int i = violations.size() - count; i < violations.size(); i++) {
@@ -295,18 +301,23 @@ public class ExamRoomController {
             
             Label violationLabel = new Label(String.format("[%s] %s (%.1f%%)", 
                     timeStr, flagsText, v.getSuspicionScore() * 100));
-            violationLabel.setStyle("-fx-text-fill: #FFC107; -fx-font-size: 11;");
+            violationLabel.setStyle("-fx-text-fill: #FFC107; -fx-font-size: 14; -fx-padding: 3;");  // Tăng từ 11 lên 14
             violationLabel.setWrapText(true);
             violationsList.getChildren().add(violationLabel);
         }
         
         if (violations.size() > 3) {
             Label moreLabel = new Label(String.format("... và %d cảnh báo khác", violations.size() - 3));
-            moreLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 10;");
+            moreLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 13; -fx-padding: 5;");  // Tăng từ 10 lên 13
             violationsList.getChildren().add(moreLabel);
         }
         
         card.getChildren().addAll(header, scoreBar, violationsList);
+        
+        // Set min width để card không bị thu nhỏ quá
+        card.setMinWidth(400);
+        card.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        
         return card;
     }
 
