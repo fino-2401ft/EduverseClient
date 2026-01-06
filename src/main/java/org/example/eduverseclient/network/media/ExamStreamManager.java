@@ -231,8 +231,8 @@ public class ExamStreamManager {
                     .timestamp(System.currentTimeMillis())
                     .build();
 
-            // Gọi RMI để lưu violation
-            RMIClient.getInstance().getExamService().reportViolation(violation);
+            // Gọi ExamService wrapper để lưu violation
+            org.example.eduverseclient.service.ExamService.getInstance().reportViolation(violation);
             log.warn("🚨 VIOLATION reported to server: {} (score: {})", result.decision, result.suspicionScore);
         } catch (Exception e) {
             log.error("Failed to report violation to server", e);

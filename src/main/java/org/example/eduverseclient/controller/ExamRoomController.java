@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javafx.scene.control.ProgressBar;
 
 @Slf4j
 public class ExamRoomController {
@@ -36,6 +37,10 @@ public class ExamRoomController {
     @FXML private ScrollPane questionsScrollPane;
     @FXML private VBox questionsContainer;
     @FXML private VBox alertContainer;  // Alert container cho student
+    @FXML private HBox violationsHeader;  // Header cho violations panel (proctor)
+    @FXML private HBox questionsHeader;  // Header cho questions panel (student)
+    @FXML private ScrollPane violationsScrollPane;  // ScrollPane cho violations (proctor)
+    @FXML private VBox violationsPanel;  // Panel hiển thị violations (proctor)
     @FXML private Button submitButton;
     @FXML private Button leaveButton;
     @FXML private Button addQuestionButton;     // Chỉ proctor mới có
@@ -59,6 +64,12 @@ public class ExamRoomController {
     private ScheduledExecutorService timerExecutor;
 
     private Map<String, String> participantNames = new ConcurrentHashMap<>();
+    
+    // Violations tracking (proctor)
+    private Map<String, List<common.model.exam.Violation>> studentViolations = new ConcurrentHashMap<>(); // userId -> List<Violation>
+    private Map<String, Double> studentSuspicionScores = new ConcurrentHashMap<>(); // userId -> latest suspicion score
+    private long lastViolationUpdateTime = 0;
+    private ScheduledExecutorService violationUpdateExecutor;
 
     @FXML
     public void initialize() {
@@ -90,24 +101,60 @@ public class ExamRoomController {
             addQuestionButton.setText("➕ Thêm câu hỏi");
             leaveButton.setText("🛑 Kết thúc bài thi");
             
-            // Proctor: Ẩn alert container
+            // Proctor: Ẩn alert container và questions panel
             if (alertContainer != null) {
                 alertContainer.setManaged(false);
                 alertContainer.setVisible(false);
             }
+            if (questionsScrollPane != null) {
+                questionsScrollPane.setManaged(false);
+                questionsScrollPane.setVisible(false);
+            }
+            if (questionsHeader != null) {
+                questionsHeader.setManaged(false);
+                questionsHeader.setVisible(false);
+            }
             
-            // Proctor: Load questions để xem/quản lý
-            loadQuestions();
+            // Proctor: Hiển thị violations panel
+            if (violationsHeader != null) {
+                violationsHeader.setManaged(true);
+                violationsHeader.setVisible(true);
+            }
+            if (violationsScrollPane != null) {
+                violationsScrollPane.setManaged(true);
+                violationsScrollPane.setVisible(true);
+            }
+            
+            // Proctor: Bắt đầu auto-update violations
+            startViolationUpdates();
         } else {
             submitButton.setVisible(true);
             submitButton.setText("📤 Nộp bài");
             addQuestionButton.setVisible(false);
             leaveButton.setText("📞 Rời phòng thi");
             
-            // Student: Hiển thị alert container
+            // Student: Hiển thị alert container và questions panel
             if (alertContainer != null) {
                 alertContainer.setManaged(true);
                 alertContainer.setVisible(true);
+            }
+            if (questionsScrollPane != null) {
+                questionsScrollPane.setManaged(true);
+                questionsScrollPane.setVisible(true);
+            }
+            if (questionsHeader != null) {
+                questionsHeader.setManaged(true);
+                questionsHeader.setVisible(true);
+            }
+            
+            // Student: Ẩn violations panel
+            if (violationsHeader != null) {
+                violationsHeader.setManaged(false);
+                violationsHeader.setVisible(false);
+            }
+            if (violationsScrollPane != null) {
+                violationsScrollPane.setManaged(false);
+                violationsScrollPane.setVisible(false);
             }
             
             // Student: Load questions để làm bài
@@ -126,6 +173,141 @@ public class ExamRoomController {
         }
 
         log.info("✅ Exam room initialized - Role: {}", isProctor ? "PROCTOR" : "STUDENT");
+    }
+
+    private void startViolationUpdates() {
+        if (!isProctor) return;
+        
+        lastViolationUpdateTime = System.currentTimeMillis();
+        violationUpdateExecutor = Executors.newSingleThreadScheduledExecutor();
+        violationUpdateExecutor.scheduleAtFixedRate(this::updateViolationsPanel, 0, 2, TimeUnit.SECONDS);
+    }
+
+    private void updateViolationsPanel() {
+        if (!isProctor || violationsPanel == null) return;
+        
+        new Thread(() -> {
+            try {
+                List<common.model.exam.Violation> recentViolations = examService.getRecentViolations(
+                        exam.getExamId(), lastViolationUpdateTime);
+                
+                if (recentViolations != null && !recentViolations.isEmpty()) {
+                    // Update violation maps
+                    for (common.model.exam.Violation violation : recentViolations) {
+                        String userId = violation.getUserId();
+                        studentViolations.computeIfAbsent(userId, k -> new ArrayList<>()).add(violation);
+                        studentSuspicionScores.put(userId, violation.getSuspicionScore());
+                    }
+                    
+                    lastViolationUpdateTime = System.currentTimeMillis();
+                    
+                    // Update UI
+                    Platform.runLater(this::refreshViolationsPanel);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to update violations: {}", e.getMessage());
+            }
+        }).start();
+    }
+
+    private void refreshViolationsPanel() {
+        if (violationsPanel == null) return;
+        
+        violationsPanel.getChildren().clear();
+        
+        if (studentViolations.isEmpty()) {
+            Label emptyLabel = new Label("Chưa có cảnh báo gian lận nào.");
+            emptyLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 14;");
+            violationsPanel.getChildren().add(emptyLabel);
+            return;
+        }
+        
+        // Hiển thị từng student với violations
+        for (Map.Entry<String, List<common.model.exam.Violation>> entry : studentViolations.entrySet()) {
+            String userId = entry.getKey();
+            List<common.model.exam.Violation> violations = entry.getValue();
+            String userName = participantNames.getOrDefault(userId, "Student " + userId.substring(0, 8));
+            Double latestScore = studentSuspicionScores.getOrDefault(userId, 0.0);
+            
+            VBox studentCard = createStudentViolationCard(userId, userName, violations, latestScore);
+            violationsPanel.getChildren().add(studentCard);
+        }
+    }
+
+    private VBox createStudentViolationCard(String userId, String userName, 
+                                           List<common.model.exam.Violation> violations, 
+                                           double latestScore) {
+        VBox card = new VBox(8);
+        
+        // Determine status color
+        String borderColor = "#4CAF50"; // OK
+        String statusText = "OK";
+        if (latestScore >= 0.70) {
+            borderColor = "#E53935"; // VIOLATION
+            statusText = "VIOLATION";
+        } else if (latestScore >= 0.40) {
+            borderColor = "#FFC107"; // WARNING
+            statusText = "WARNING";
+        }
+        
+        card.setStyle(String.format(
+            "-fx-background-color: #2C2C2C; -fx-border-color: %s; -fx-border-width: 2; " +
+            "-fx-border-radius: 5; -fx-background-radius: 5; -fx-padding: 10;",
+            borderColor
+        ));
+        
+        // Header: Student name + status
+        HBox header = new HBox(10);
+        Label nameLabel = new Label(userName);
+        nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;");
+        
+        Label statusLabel = new Label(statusText);
+        statusLabel.setStyle(String.format(
+            "-fx-text-fill: %s; -fx-font-size: 12; -fx-font-weight: bold;",
+            borderColor
+        ));
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        
+        Label scoreLabel = new Label(String.format("%.1f%%", latestScore * 100));
+        scoreLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12;");
+        
+        header.getChildren().addAll(nameLabel, spacer, statusLabel, scoreLabel);
+        
+        // Progress bar for suspicion score
+        ProgressBar scoreBar = new ProgressBar(latestScore);
+        scoreBar.setPrefWidth(Double.MAX_VALUE);
+        scoreBar.setStyle(String.format(
+            "-fx-accent: %s;",
+            borderColor
+        ));
+        
+        // Recent violations (last 3)
+        VBox violationsList = new VBox(5);
+        violationsList.setStyle("-fx-padding: 5;");
+        
+        int count = Math.min(3, violations.size());
+        for (int i = violations.size() - count; i < violations.size(); i++) {
+            common.model.exam.Violation v = violations.get(i);
+            String timeStr = new SimpleDateFormat("HH:mm:ss").format(new Date(v.getTimestamp()));
+            String flagsText = v.getFlags() != null ? String.join(", ", v.getFlags()) : v.getViolationType();
+            
+            Label violationLabel = new Label(String.format("[%s] %s (%.1f%%)", 
+                    timeStr, flagsText, v.getSuspicionScore() * 100));
+            violationLabel.setStyle("-fx-text-fill: #FFC107; -fx-font-size: 11;");
+            violationLabel.setWrapText(true);
+            violationsList.getChildren().add(violationLabel);
+        }
+        
+        if (violations.size() > 3) {
+            Label moreLabel = new Label(String.format("... và %d cảnh báo khác", violations.size() - 3));
+            moreLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 10;");
+            violationsList.getChildren().add(moreLabel);
+        }
+        
+        card.getChildren().addAll(header, scoreBar, violationsList);
+        return card;
     }
 
     private void initMediaStreaming() {
@@ -590,6 +772,10 @@ public class ExamRoomController {
 
         if (updateExecutor != null) {
             updateExecutor.shutdownNow();
+        }
+
+        if (violationUpdateExecutor != null) {
+            violationUpdateExecutor.shutdownNow();
         }
 
         if (examStreamManager != null) {

@@ -6,6 +6,7 @@ import common.model.exam.ExamParticipant;
 import common.model.exam.ExamResult;
 import common.model.exam.Question;
 import common.model.exam.StudentAnswer;
+import common.model.exam.Violation;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -99,4 +100,19 @@ public interface IExamService extends Remote {
      * Lấy tất cả student peers (cho proctor để broadcast)
      */
     List<Peer> getAllStudentPeers(String examId) throws RemoteException;
+
+    /**
+     * Báo cáo violation (gian lận)
+     */
+    boolean reportViolation(Violation violation) throws RemoteException;
+
+    /**
+     * Lấy violations gần đây của exam (cho proctor)
+     */
+    List<Violation> getRecentViolations(String examId, long sinceTimestamp) throws RemoteException;
+
+    /**
+     * Lấy tất cả violations của exam (cho proctor)
+     */
+    List<Violation> getViolationsByExam(String examId) throws RemoteException;
 }

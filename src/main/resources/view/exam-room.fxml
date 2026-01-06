@@ -43,9 +43,16 @@
                 </GridPane>
             </VBox>
 
-            <!-- RIGHT: Exam Questions Panel -->
+            <!-- RIGHT: Exam Questions Panel (Student) / Violations Panel (Proctor) -->
             <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #2C2C2C; -fx-padding: 15; -fx-background-radius: 10;">
-                <HBox alignment="CENTER_LEFT" spacing="10">
+                <!-- Proctor: Violations Panel Header -->
+                <HBox fx:id="violationsHeader" alignment="CENTER_LEFT" spacing="10" managed="false" visible="false">
+                    <Label text="🚨 Cảnh báo gian lận" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                
+                <!-- Student: Questions Panel Header -->
+                <HBox fx:id="questionsHeader" alignment="CENTER_LEFT" spacing="10">
                     <Label text="📝 Bài kiểm tra" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button fx:id="addQuestionButton" text="➕ Thêm câu hỏi" onAction="#handleAddQuestion"
@@ -57,6 +64,13 @@
                 <!-- Alert Container (chỉ hiển thị cho student) -->
                 <VBox fx:id="alertContainer" spacing="5" style="-fx-padding: 5;" managed="false" visible="false"/>
                 
+                <!-- Violations Panel (chỉ cho proctor) -->
+                <ScrollPane fx:id="violationsScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: #1E1E1E; -fx-background-radius: 5;" managed="false" visible="false">
+                    <VBox fx:id="violationsPanel" spacing="10" style="-fx-padding: 10;"/>
+                </ScrollPane>
+                
+                <!-- Questions Panel (chỉ cho student) -->
                 <ScrollPane fx:id="questionsScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
                             style="-fx-background-color: #1E1E1E; -fx-background-radius: 5;">
                     <VBox fx:id="questionsContainer" spacing="15" style="-fx-padding: 10;"/>

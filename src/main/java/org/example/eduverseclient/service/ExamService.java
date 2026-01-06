@@ -312,5 +312,29 @@ public class ExamService {
             return false;
         }
     }
+
+    /**
+     * Lấy violations gần đây (cho proctor)
+     */
+    public List<Violation> getRecentViolations(String examId, long sinceTimestamp) {
+        try {
+            return rmiClient.getExamService().getRecentViolations(examId, sinceTimestamp);
+        } catch (Exception e) {
+            log.error("❌ Get recent violations failed", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Lấy tất cả violations của exam (cho proctor)
+     */
+    public List<Violation> getViolationsByExam(String examId) {
+        try {
+            return rmiClient.getExamService().getViolationsByExam(examId);
+        } catch (Exception e) {
+            log.error("❌ Get violations by exam failed", e);
+            return new ArrayList<>();
+        }
+    }
 }
 

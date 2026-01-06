@@ -12,18 +12,17 @@ module org.example.eduverseclient {
     requires webcam.capture;
     requires cloudinary.core;
     requires javafx.web;  // Cho SwingFXUtils
+    requires java.net.http;  // Cho HttpClient (không cần Gson/Jackson vì dùng manual JSON parsing)
 
     opens org.example.eduverseclient to javafx.fxml;
     exports org.example.eduverseclient;
 
-
- //exports là để chỉ định các gói (packages) mà module này muốn chia sẻ với các module khác.
+    //exports là để chỉ định các gói (packages) mà module này muốn chia sẻ với các module khác.
     exports common.rmi;
     exports common.model;
-
 
     // Mở quyền cho javafx.fxml truy cập vào package chứa Controller
     // để nó có thể khởi tạo LoginController và gán các biến @FXML
     opens org.example.eduverseclient.controller to javafx.fxml;
-
 }
+
