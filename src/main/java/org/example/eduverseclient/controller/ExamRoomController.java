@@ -35,6 +35,7 @@ public class ExamRoomController {
     @FXML private GridPane videoGrid;           // Grid view (giống meeting)
     @FXML private ScrollPane questionsScrollPane;
     @FXML private VBox questionsContainer;
+    @FXML private VBox alertContainer;  // Alert container cho student
     @FXML private Button submitButton;
     @FXML private Button leaveButton;
     @FXML private Button addQuestionButton;     // Chỉ proctor mới có
@@ -89,6 +90,12 @@ public class ExamRoomController {
             addQuestionButton.setText("➕ Thêm câu hỏi");
             leaveButton.setText("🛑 Kết thúc bài thi");
             
+            // Proctor: Ẩn alert container
+            if (alertContainer != null) {
+                alertContainer.setManaged(false);
+                alertContainer.setVisible(false);
+            }
+            
             // Proctor: Load questions để xem/quản lý
             loadQuestions();
         } else {
@@ -96,6 +103,12 @@ public class ExamRoomController {
             submitButton.setText("📤 Nộp bài");
             addQuestionButton.setVisible(false);
             leaveButton.setText("📞 Rời phòng thi");
+            
+            // Student: Hiển thị alert container
+            if (alertContainer != null) {
+                alertContainer.setManaged(true);
+                alertContainer.setVisible(true);
+            }
             
             // Student: Load questions để làm bài
             loadQuestions();
@@ -161,6 +174,11 @@ public class ExamRoomController {
                     // Callback Video (không có chat)
                     (userId, image) -> Platform.runLater(() -> updateVideoPanel(userId, image))
             );
+
+            // Setup anti-cheat callback (chỉ cho students)
+            if (!isProctor) {
+                setupAntiCheat();
+            }
 
             // Camera bắt buộc ON
             examStreamManager.setCameraActive(true);
@@ -520,6 +538,47 @@ public class ExamRoomController {
                 Platform.runLater(this::closeWindow);
             }).start();
         });
+    }
+
+    private void setupAntiCheat() {
+        if (examStreamManager != null && !isProctor) {
+            examStreamManager.setViolationCallback(result -> {
+                Platform.runLater(() -> {
+                    if (result != null && !"OK".equals(result.decision)) {
+                        showViolationAlert(result);
+                    }
+                });
+            });
+            log.info("✅ Anti-cheat monitoring enabled for student");
+        }
+    }
+
+    private void showViolationAlert(org.example.eduverseclient.service.AntiCheatService.AnalysisResult result) {
+        if (alertContainer == null) return;
+        
+        String style = "-fx-background-color: #E53935; -fx-text-fill: white; -fx-padding: 10; -fx-background-radius: 5; -fx-font-size: 12;";
+        if ("WARNING".equals(result.decision)) {
+            style = "-fx-background-color: #FFC107; -fx-text-fill: black; -fx-padding: 10; -fx-background-radius: 5; -fx-font-size: 12;";
+        }
+        
+        String flagsText = result.flags != null ? String.join(", ", result.flags) : "Unknown";
+        Label alert = new Label(String.format("⚠️ %s (Score: %.1f%%) - %s", 
+                result.decision, result.suspicionScore * 100, flagsText));
+        alert.setStyle(style);
+        alert.setWrapText(true);
+        alert.setMaxWidth(Double.MAX_VALUE);
+        
+        alertContainer.getChildren().add(alert);
+        
+        // Auto-remove sau 5 giây
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                Platform.runLater(() -> alertContainer.getChildren().remove(alert));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
     }
 
     private void cleanup() {

@@ -54,6 +54,9 @@
                                    -fx-font-size: 13;"/>
                 </HBox>
                 
+                <!-- Alert Container (chỉ hiển thị cho student) -->
+                <VBox fx:id="alertContainer" spacing="5" style="-fx-padding: 5;" managed="false" visible="false"/>
+                
                 <ScrollPane fx:id="questionsScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
                             style="-fx-background-color: #1E1E1E; -fx-background-radius: 5;">
                     <VBox fx:id="questionsContainer" spacing="15" style="-fx-padding: 10;"/>

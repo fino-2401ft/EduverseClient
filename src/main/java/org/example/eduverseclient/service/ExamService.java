@@ -6,6 +6,7 @@ import common.model.exam.ExamParticipant;
 import common.model.exam.ExamResult;
 import common.model.exam.Question;
 import common.model.exam.StudentAnswer;
+import common.model.exam.Violation;
 import lombok.extern.slf4j.Slf4j;
 import org.example.eduverseclient.RMIClient;
 
@@ -297,6 +298,18 @@ public class ExamService {
         } catch (Exception e) {
             log.error("❌ Get student peers failed", e);
             return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Báo cáo violation (gian lận)
+     */
+    public boolean reportViolation(Violation violation) {
+        try {
+            return rmiClient.getExamService().reportViolation(violation);
+        } catch (Exception e) {
+            log.error("❌ Report violation failed", e);
+            return false;
         }
     }
 }

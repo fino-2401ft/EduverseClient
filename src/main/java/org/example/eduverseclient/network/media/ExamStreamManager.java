@@ -68,6 +68,13 @@ public class ExamStreamManager {
 
     // Callbacks
     private BiConsumer<String, Image> videoCallback;
+    
+    // Anti-cheating
+    private org.example.eduverseclient.service.AntiCheatService antiCheatService;
+    private ScheduledExecutorService antiCheatExecutor;
+    private long lastAnalysisTime = 0;
+    private static final long ANALYSIS_INTERVAL_MS = 1000; // 1 FPS
+    private java.util.function.Consumer<org.example.eduverseclient.service.AntiCheatService.AnalysisResult> violationCallback;
 
     public ExamStreamManager(ExamParticipant participant, boolean isProctor) {
         this.myParticipant = participant;
@@ -75,6 +82,7 @@ public class ExamStreamManager {
         this.myPeer = RMIClient.getInstance().getMyPeer();
         this.examId = participant.getExamId();
         this.audioPlayers = new ConcurrentHashMap<>();
+        this.antiCheatService = org.example.eduverseclient.service.AntiCheatService.getInstance();
         log.info("✅ ExamStreamManager initialized - Role: {}, ExamId: {}", 
                 isProctor ? "PROCTOR" : "STUDENT", examId);
     }
@@ -132,6 +140,9 @@ public class ExamStreamManager {
                         } else {
                             // STUDENT: Gửi video đến proctor (proctor sẽ forward)
                             sendFrameToProctor(frameData);
+                            
+                            // Analyze frame for anti-cheat (chỉ cho students, 1 FPS)
+                            analyzeFrameForAntiCheat(frameData);
                         }
                     },
                     previewImage -> {
@@ -178,6 +189,53 @@ public class ExamStreamManager {
         } catch (SocketException e) {
             log.error("❌ Critical Error: Failed to bind sockets", e);
             stop();
+        }
+    }
+
+    public void setViolationCallback(java.util.function.Consumer<org.example.eduverseclient.service.AntiCheatService.AnalysisResult> callback) {
+        this.violationCallback = callback;
+    }
+
+    private void analyzeFrameForAntiCheat(byte[] frameBytes) {
+        long now = System.currentTimeMillis();
+        if (now - lastAnalysisTime < ANALYSIS_INTERVAL_MS) {
+            return; // Throttle to 1 FPS
+        }
+        lastAnalysisTime = now;
+
+        antiCheatService.analyzeFrame(frameBytes, examId, myPeer.getUserId())
+                .thenAccept(result -> {
+                    if (result != null && violationCallback != null) {
+                        violationCallback.accept(result);
+                        
+                        // Nếu violation, gửi đến server
+                        if ("VIOLATION".equals(result.decision) || result.suspicionScore >= 0.70) {
+                            reportViolationToServer(result);
+                        }
+                    }
+                });
+    }
+
+    private void reportViolationToServer(org.example.eduverseclient.service.AntiCheatService.AnalysisResult result) {
+        try {
+            // Tạo violation object
+            common.model.exam.Violation violation = common.model.exam.Violation.builder()
+                    .violationId(java.util.UUID.randomUUID().toString())
+                    .examId(examId)
+                    .userId(myPeer.getUserId())
+                    .userName(RMIClient.getInstance().getCurrentUser().getFullName())
+                    .violationType(String.join(", ", result.flags))
+                    .suspicionScore(result.suspicionScore)
+                    .decision(result.decision)
+                    .flags(result.flags)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+
+            // Gọi RMI để lưu violation
+            RMIClient.getInstance().getExamService().reportViolation(violation);
+            log.warn("🚨 VIOLATION reported to server: {} (score: {})", result.decision, result.suspicionScore);
+        } catch (Exception e) {
+            log.error("Failed to report violation to server", e);
         }
     }
 
